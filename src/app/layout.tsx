@@ -1,5 +1,6 @@
 import { ThemeModeScript } from "flowbite-react";
 import type { Metadata } from "next";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,8 +16,7 @@ const robotoMono = Roboto_Mono({
 
 export const metadata: Metadata = {
     title: "",
-    description:
-        "",
+    description: "",
 };
 
 const RootLayout = ({
@@ -30,7 +30,9 @@ const RootLayout = ({
             <ThemeModeScript />
         </head>
         <body className={`${roboto.variable} ${robotoMono.variable} antialiased`}>
-        {children}
+        <SessionProvider>
+            {children}
+        </SessionProvider>
         </body>
         </html>
     );
