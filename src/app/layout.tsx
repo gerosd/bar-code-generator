@@ -15,7 +15,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "",
+    title: "Копирайтер честного знака",
     description: "",
 };
 
