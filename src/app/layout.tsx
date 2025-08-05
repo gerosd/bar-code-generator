@@ -30,9 +30,9 @@ const RootLayout = ({
             <ThemeModeScript />
         </head>
         <body className={`${roboto.variable} ${robotoMono.variable} antialiased`}>
-        <SessionProvider>
+        {/*<SessionProvider>*/}
             {children}
-        </SessionProvider>
+        {/*</SessionProvider>*/}
         </body>
         </html>
     );

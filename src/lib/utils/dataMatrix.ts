@@ -1,3 +1,4 @@
+//@ts-ignore - ошибка декларации в самой библиотеки, не влияет на работоспособность
 import bwipjs from 'bwip-js';
 
 export interface DataMatrixOptions {
@@ -13,7 +14,7 @@ export async function generateDataMatrix(
 ): Promise<Buffer> {
     const defaultOptions: DataMatrixOptions = {
         scale: 3,
-        includetext: false,
+        includetext: true,
         backgroundcolor: 'ffffff',
         color: '000000',
         ...options
@@ -35,9 +36,4 @@ export interface PDFGenerationRequest {
     scannedData: string;
     options?: DataMatrixOptions;
     title?: string;
-}
-
-export interface PDFGenerationResponse {
-    success: boolean;
-    error?: string;
 }

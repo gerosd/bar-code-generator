@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import jsPDF from 'jspdf';
+import robotoBase64 from '@/lib/utils/robotoBase64';
 
 interface PDFData {
     dataMatrixImage: string;
@@ -17,26 +18,29 @@ export default function Home() {
     const generatePDFWithJsPDF = useCallback((pdfData: PDFData) => {
         try {
             const doc = new jsPDF({
-                orientation: "portrait",
+                orientation: "landscape",
                 unit: 'mm',
-                format: 'A4'
+                format: [58, 40]
             });
+            
+            doc.addFileToVFS('Roboto.ttf', robotoBase64);
+            doc.addFont('Roboto.ttf', 'Roboto', 'normal');
+            doc.setFont('Roboto', 'normal');
 
             if (pdfData.title) {
                 doc.setFontSize(16);
                 doc.text(pdfData.title, 105, 30, { align: "center" });
             }
 
-            doc.addImage(pdfData.dataMatrixImage, "PNG", 80, 50, 50, 50);
+            doc.addImage(pdfData.dataMatrixImage, "PNG", 2, 2, 25, 25);
             doc.setFontSize(12);
             doc.text(`Данные: ${pdfData.scannedData}`, 105, 120, { align: 'center' });
 
-            // Дата
-            doc.setFontSize(10);
-            doc.text(`Сгенерировано: ${pdfData.timestamp}`, 105, 140, { align: 'center' });
+            const pdfBlob = doc.output('blob');
+            const pdfURL = URL.createObjectURL(pdfBlob);
+            window.open(pdfURL, '_blank');
 
-            // Сохранение
-            doc.save(`datamatrix-${Date.now()}.pdf`);
+            setTimeout(() => URL.revokeObjectURL(pdfURL), 1000);
         } catch (error) {
             throw new Error(`Ошибка создания PDF: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`);
         }
@@ -60,10 +64,10 @@ export default function Home() {
                 },
                 body: JSON.stringify({
                     scannedData: data,
-                    title: 'DataMatrix код',
+                    title: 'DataMatrix code',
                     options: {
                         scale: 4,
-                        includetext: false
+                        includetext: true
                     }
                 }),
             });
