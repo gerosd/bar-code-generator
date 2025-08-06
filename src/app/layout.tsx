@@ -29,7 +29,7 @@ const RootLayout = ({
         <head>
             <ThemeModeScript />
         </head>
-        <body className={`${roboto.variable} ${robotoMono.variable} antialiased`}>
+        <body className={`${roboto.variable} ${robotoMono.variable} antialiased bg-gray-900`}>
         {/*<SessionProvider>*/}
             {children}
         {/*</SessionProvider>*/}

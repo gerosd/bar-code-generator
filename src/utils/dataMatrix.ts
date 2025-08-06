@@ -36,4 +36,6 @@ export interface PDFGenerationRequest {
     scannedData: string;
     options?: DataMatrixOptions;
     title?: string;
+    productName?: string; // Название товара
+    productSize?: string; // Размер товара
 }

@@ -1,0 +1,53 @@
+import type { ObjectId } from 'mongodb'
+
+/**
+ * Роли пользователя внутри клиента
+ */
+export type ClientMemberRole = 'admin' | 'member'
+
+/**
+ * Член клиента (embedded в документе клиента)
+ */
+export interface ClientMember {
+	userId: string
+	role: ClientMemberRole
+	invitedAt: Date
+}
+
+/**
+ * Документ клиента в MongoDB
+ */
+export interface ClientDocument {
+	_id: ObjectId
+	name: string
+	members: ClientMember[]
+	createdAt: Date
+	updatedAt: Date
+}
+
+/**
+ * Тип клиента для использования в приложении
+ */
+export interface ClientType {
+	id: string
+	name: string
+	members: ClientMember[]
+	createdAt: Date
+	updatedAt: Date
+}
+
+/**
+ * Данные для создания клиента
+ */
+export interface CreateClientData {
+	name: string
+}
+
+/**
+ * Данные для приглашения пользователя
+ */
+export interface InviteUserData {
+	clientId: string
+	userId: string
+	role: ClientMemberRole
+}

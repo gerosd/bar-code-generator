@@ -1,0 +1,19 @@
+{
+	"categories": {
+		"PERFORMANCE": false,
+		"CACHE": false,
+		"DEBUG": true,
+		"API": true,
+		"AUTH": true,
+		"DATABASE": true,
+		"WORKER": true
+	},
+	"debugFunctions": {
+		"getAllPrices": false,
+		"getProductsInfo": false,
+		"fetchProducts": false,
+		"updateTotalProducts": false,
+		"getSingleTaskDynamicData": false
+	},
+	"logLevel": "info"
+}
