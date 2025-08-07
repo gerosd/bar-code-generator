@@ -31,6 +31,29 @@ export async function generateDataMatrix(
     }
 }
 
+export async function generateEAN13Barcode(
+    data: string,
+    options: DataMatrixOptions = {}
+): Promise<Buffer> {
+    // Увеличиваем scale и убираем текст под штрихкодом
+    const defaultOptions: DataMatrixOptions = {
+        scale: 6, // увеличим масштаб для максимального размера
+        includetext: true, // убираем надписи
+        backgroundcolor: 'ffffff',
+        color: '000000',
+        ...options,
+    };
+    try {
+        return await bwipjs.toBuffer({
+            bcid: 'ean13',
+            text: data,
+            ...defaultOptions,
+        });
+    } catch (err) {
+        throw new Error(`Ошибка генерации EAN-13: ${err instanceof Error ? err.message : 'Неизвестная ошибка'}`);
+    }
+}
+
 // Типы для PDF генерации
 export interface PDFGenerationRequest {
     scannedData: string;

@@ -10,7 +10,7 @@
         "lint": "next lint",
         "postinstall": "flowbite-react patch",
         "lint:fix": "eslint . --fix",
-        "worker:product-aggregator": "bun --watch ../barCodeGenerator/src/workers/product-aggregator-worker.ts"
+        "product-aggregator": "bun --watch ../barCodeGenerator/src/workers/product-aggregator-worker.ts"
     },
     "dependencies": {
         "@auth/mongodb-adapter": "^3.10.0",

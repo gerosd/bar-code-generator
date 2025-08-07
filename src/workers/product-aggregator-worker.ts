@@ -115,7 +115,7 @@ async function fetchJson(url: string): Promise<WbCard> {
 	if (!response.ok) {
 		throw new Error(`Failed to fetch ${url} with status ${response.status}`)
 	}
-	return response.json() as Promise<WbCard>
+	return await response.json() as Promise<WbCard>
 }
 
 /**
@@ -596,7 +596,7 @@ const fetchAndCacheSiteData = async (): Promise<void> => {
 				supplierId: siteProduct.supplierId,
 				siteTotalQuantity: siteProduct.totalQuantity,
 				siteDataFetchedAt: new Date(),
-				lastUpdatedAt: new Date(), // Обновляем основную метку времени
+				lastUpdatedAt: new Date(), // Обновляем основную метку времени.
 				// Обновляем title/brand из данных с сайта, т.к они могут быть точнее
 				title: siteProduct.name,
 				brand: siteProduct.brand,
@@ -695,8 +695,8 @@ const enrichProductData = async (): Promise<void> => {
 			const { nmId, photos, vendorCode } = product
 
 			// Параллельно запускаем поиск изображений и/или vendorCode, если они отсутствуют
-			const imagesPromise = !photos ? findProductImagesForArticle(nmId) : Promise.resolve(undefined)
-			const vendorCodePromise = !vendorCode ? findProductVendorCode(nmId) : Promise.resolve(undefined)
+			const imagesPromise = !photos ? await findProductImagesForArticle(nmId) : Promise.resolve(undefined)
+			const vendorCodePromise = !vendorCode ? await findProductVendorCode(nmId) : Promise.resolve(undefined)
 
 			const [images, foundVendorCode] = await Promise.all([imagesPromise, vendorCodePromise])
 

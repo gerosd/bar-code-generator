@@ -1,16 +1,10 @@
 import {Button, Card} from 'flowbite-react';
 import {QrCode, FileText, Download, CheckCircle, Settings} from 'lucide-react';
-import {useRouter} from "next/navigation";
 import Link from "next/link";
 import {auth} from "@/lib/auth";
 
 export default async function Home() {
-    const router = useRouter();
     const session = await auth();
-
-    const handleRedirectToCopy = () => {
-        router.push('/createDuplicate');
-    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900">
@@ -32,7 +26,7 @@ export default async function Home() {
                             <a href="#" className="text-gray-200 hover:text-blue-300">Поддержка</a>
                         </div>
                         <div className="flex items-center space-x-4">
-                            {session ? <Link href="/auth/signin"
+                            {!session?.user?.name ? <Link href="/auth/signin"
                                              className="text-white bg-blue-600 py-2 px-5 rounded-4xl hover:bg-blue-800 duration-75 transition">
                                 Войти
                             </Link> : <Link href="/dashboard" className="text-white bg-blue-600 py-2 px-5 rounded-4xl hover:bg-blue-800 duration-75 transition">
@@ -59,7 +53,7 @@ export default async function Home() {
                             Полное соответствие требованиям системы маркировки и прослеживаемости товаров.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button onClick={handleRedirectToCopy} size="lg" color="blue" className='cursor-pointer'>
+                            <Button size="lg" color="blue" className='cursor-pointer'>
                                 <QrCode className="w-5 h-5 mr-2"/>
                                 Создать дубликат
                             </Button>

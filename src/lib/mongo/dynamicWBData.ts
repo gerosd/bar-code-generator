@@ -158,6 +158,18 @@ export const findProductsForEnrichment = async (limit = 200): Promise<DynamicWBD
 }
 
 /**
+ * Находит документ товара по баркоду (sku).
+ * @param barcode Баркод товара (sku).
+ * @returns Документ товара или null, если не найден.
+ */
+export const findProductByBarcode = async (barcode: string): Promise<DynamicWBDataDocument | null> => {
+    return executeMongoOperation(async () => {
+        const collection = await getDynamicWBDataCollection();
+        return collection.findOne({ 'sizes.skus': barcode });
+    }, `поиске товара по баркоду: ${barcode}`);
+};
+
+/**
  * Удаляет все документы из коллекции товаров.
  * @returns {Promise<number>} Количество удаленных документов.
  */
