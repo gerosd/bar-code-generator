@@ -15,6 +15,7 @@ import { SupplierData, SupplierFormData, SupplierTokenInfo, ValidateApiKeyResult
 import { endMeasure, logger, measureAsync, startMeasure } from '@/utils/logger'
 import { revalidatePath } from 'next/cache'
 import { getCurrentClientId, getUserIdFromSession, maskToken, validateWildberriesApiKey } from './utils'
+import { bulkUpsertWbSuppliers }  from '@/lib/mongo/wbSuppliers';
 
 /**
  * Проверка валидности API-ключа
@@ -109,6 +110,10 @@ export const createSupplierKey = async (formData: SupplierFormData): Promise<Sup
 			logger.info(
 				`[SupplierActions] Успешно получены legacy данные для нового ключа: id=${legacySupplierId}, name='${legacySupplierName}'`
 			)
+			// сразу upsert в wbSuppliers
+			if (legacySupplierId && legacySupplierName) {
+				await bulkUpsertWbSuppliers([{ legacySupplierId, name: legacySupplierName }])
+			}
 		} else {
 			logger.warn(
 				`[SupplierActions] Не удалось получить legacy данные для нового ключа: ${legacyInfoResult.error}`

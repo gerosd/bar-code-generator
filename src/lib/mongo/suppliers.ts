@@ -154,28 +154,22 @@ export const getSupplierByIdAndClientId = async (supplierId: string, clientId: s
 /**
  * Создание нового поставщика для клиента
  */
-export const createSupplierForClient = async (supplierData: {
+export const createSupplierForClient = async (supplierData: Partial<SupplierType> & {
 	clientId: string
 	name: string
 	key: string
 	isValid: boolean
-	// userId: string; // Удаляем отсюда, если было
 }): Promise<Supplier | null> => {
 	return executeMongoOperation(async () => {
 		const collection = await getSuppliersCollection()
-		// Убедимся, что userId не добавляется в supplierToInsert
+		// Сохраняем все дополнительные поля, если они есть
 		const supplierToInsert: Omit<Supplier, '_id'> = {
-			clientId: supplierData.clientId,
-			name: supplierData.name,
-			key: supplierData.key,
-			isValid: supplierData.isValid,
-			// totalProducts: 0, // Можно инициализировать, если нужно
-			// status: 'active', // Можно инициализировать, если нужно
-			addedAt: new Date(), // Добавляем недостающее поле addedAt
+			...supplierData,
+			addedAt: new Date(),
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		}
-		const result = await collection.insertOne(supplierToInsert as Supplier) // Убедимся, что тип Supplier не ожидает userId
+		const result = await collection.insertOne(supplierToInsert as Supplier)
 		if (!result.insertedId) {
 			throw new Error('Не удалось вставить поставщика, отсутствует insertedId.')
 		}

@@ -3,7 +3,7 @@
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FaBoxOpen, FaBuilding, FaHome, FaSignOutAlt, FaStore, FaTimes, FaUsers } from 'react-icons/fa'
+import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers } from 'react-icons/fa'
 
 interface SidebarProps {
     isAdmin: boolean
@@ -12,7 +12,7 @@ interface SidebarProps {
     closeDrawer?: () => void
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawer, closeDrawer }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawer, closeDrawer }: SidebarProps) => {
     const pathname = usePathname();
 
     const isActive = (path: string) => {
@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                         className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                         aria-label='Закрыть меню'
                     >
-                        <FaTimes className='w-5 h-5' />
+                        <FaTimes className='w-5 h-5'/>
                     </button>
                 )}
             </div>
@@ -59,7 +59,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                                     : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                         >
-                            <FaHome className='w-5 h-5 mr-3' />
+                            <FaHome className='w-5 h-5 mr-3'/>
                             <span>Дашборд</span>
                         </Link>
                     </li>
@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                                     : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                         >
-                            <FaStore className='w-5 h-5 mr-3' />
+                            <FaStore className='w-5 h-5 mr-3'/>
                             <span>Поставщики</span>
                         </Link>
                     </li>
@@ -89,8 +89,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                                     : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                         >
-                            <FaBuilding className='w-5 h-5 mr-3' />
+                            <FaBuilding className='w-5 h-5 mr-3'/>
                             <span>Управление клиентами</span>
+                        </Link>
+                    </li>
+
+                    <li>
+                        <Link
+                            href="/generate"
+                            onClick={handleLinkClick}
+                            className={`flex items-center p-3 text-base rounded-lg transition-colors ${
+                                isActive('/generate')
+                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                                    : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            <FaQrcode className="w-5 h-5 mr-3"/>
+                            <span>Генерация datamatrix</span>
                         </Link>
                     </li>
 
@@ -111,7 +126,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                                             : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }`}
                                 >
-                                    <FaBoxOpen className='w-5 h-5 mr-3' />
+                                    <FaBoxOpen className='w-5 h-5 mr-3'/>
                                     <span>База товаров</span>
                                 </Link>
                             </li>
@@ -125,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                                             : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }`}
                                 >
-                                    <FaUsers className='w-5 h-5 mr-3' />
+                                    <FaUsers className='w-5 h-5 mr-3'/>
                                     <span>Все клиенты</span>
                                 </Link>
                             </li>
@@ -139,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                                             : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }`}
                                 >
-                                    <FaStore className='w-5 h-5 mr-3' />
+                                    <FaStore className='w-5 h-5 mr-3'/>
                                     <span>Поставщики WB</span>
                                 </Link>
                             </li>
@@ -152,11 +167,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                 <button
                     onClick={() => {
                         handleLinkClick()
-                        signOut({ callbackUrl: '/' })
+                        signOut({callbackUrl: '/'})
                     }}
                     className='flex items-center w-full p-3 text-base text-gray-900 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
                 >
-                    <FaSignOutAlt className='w-5 h-5 mr-3' />
+                    <FaSignOutAlt className='w-5 h-5 mr-3'/>
                     <span>Выйти</span>
                 </button>
             </div>

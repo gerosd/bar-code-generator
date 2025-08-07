@@ -1,4 +1,4 @@
-import CreateDuplicateWindow from "@/components/scan/CreateDuplicateWindow";
+import CreateDuplicateWindow from "@/components/generate/CreateDuplicateWindow";
 
 export default function ScanProductDataMatrix() {
     return (
