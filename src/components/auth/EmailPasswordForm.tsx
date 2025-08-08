@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {signIn} from "next-auth/react";
 import {useRouter} from "next/navigation";
-import {Mail, AlertCircle} from "lucide-react";
+import {Mail} from "lucide-react";
 
 interface EmailPasswordFormProps {
     mode: "signin" | "signup";
@@ -46,7 +46,7 @@ export function EmailPasswordForm({mode}: EmailPasswordFormProps) {
             const result = await signIn("credentials", {
                 email,
                 password,
-                redirect: true,
+                redirect: false,
             });
 
             if (result?.error) {

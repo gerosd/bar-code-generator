@@ -25,6 +25,7 @@ export default function CreateDuplicateWindow() {
         }
     }, []);
 
+    // Требуется для замены русских букв на английские, т.к сканер эмулирует ввод с клавиатуры
     const layoutMap: Record<string, string> = {
         'й': 'q', 'ц': 'w', 'у': 'e', 'к': 'r', 'е': 't', 'н': 'y', 'г': 'u', 'ш': 'i', 'щ': 'o', 'з': 'p',
         'х': '[', 'ъ': ']', 'ф': 'a', 'ы': 's', 'в': 'd', 'а': 'f', 'п': 'g', 'р': 'h', 'о': 'j', 'л': 'k',
@@ -69,6 +70,7 @@ export default function CreateDuplicateWindow() {
         return text.split('').map(char => layoutMap[char] || char).join('');
     }, []);
 
+    // Замена русских букв на английские с учетом регистра
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const rusText = event.target.value;
         const engText = convertLayout(rusText);
@@ -87,8 +89,6 @@ export default function CreateDuplicateWindow() {
                 // Получаем 13 цифр после первых трёх символов
                 const barcodeCandidate = dataMatrix.slice(3, 16);
                 const isEAN13 = /^\d{13}$/.test(barcodeCandidate);
-                // Копировать в буфер обмена оба значения
-                await navigator.clipboard.writeText(isEAN13 ? `${dataMatrix}\n${barcodeCandidate}` : dataMatrix);
                 // Получаем данные о товаре по баркоду
                 let productName = '';
                 let productSize = '';
@@ -105,7 +105,7 @@ export default function CreateDuplicateWindow() {
                         //productName и productSize останутся пустыми
                     }
                 }
-                // Печать страницы с datamatrix (оригинал)
+                // Печать страницы с datamatrix
                 await printPDF({
                     scannedData: dataMatrix,
                     productName,
