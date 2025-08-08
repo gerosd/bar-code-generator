@@ -189,28 +189,16 @@ export const getAllProductsAdminView = async (): Promise<ProductDatabaseView[]> 
 	const collection = await getDynamicWBDataCollection()
 	const documents = await collection.find({}).sort({ cardUpdatedAt: -1 }).toArray()
 
-	// Трансформация документов в ProductDatabaseView
-	return documents.map((doc: DynamicWBDataDocument) => {
-		// Логика для цены и СПП: берем из первого размера, если есть
-		const firstSizeWithPrice = doc.sizes?.find((s) => s.sitePrice !== undefined)
-		const sitePrice = firstSizeWithPrice?.sitePrice
-		const spp = firstSizeWithPrice?.siteSpp
-		const supplierPrice = firstSizeWithPrice?.supplierPrice
-
-		return {
-			nmID: doc.nmId,
-			brand: doc.brand,
-			title: doc.title,
-			vendorCode: doc.vendorCode,
-			sitePrice,
-			totalQuantity: doc.siteTotalQuantity,
-			supplierWBId: doc.supplierId,
-			spp,
-			supplierPrice,
-			supplierDiscount: doc.supplierDiscount,
-			photoTmUrl: doc.photos?.thumbnail,
-			photoC516x688Url: doc.photos?.medium,
-			cardUpdatedAt: doc.cardUpdatedAt,
-		}
-	})
+    // Трансформация документов в ProductDatabaseView (без цен)
+    return documents.map((doc: DynamicWBDataDocument) => ({
+        nmID: doc.nmId,
+        brand: doc.brand,
+        title: doc.title,
+        vendorCode: doc.vendorCode,
+        totalQuantity: doc.siteTotalQuantity,
+        supplierWBId: doc.supplierId,
+        photoTmUrl: doc.photos?.thumbnail,
+        photoC516x688Url: doc.photos?.medium,
+        cardUpdatedAt: doc.cardUpdatedAt,
+    }))
 }

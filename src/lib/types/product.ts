@@ -4,12 +4,8 @@ export interface ProductDatabaseView {
     brand?: string
     title?: string
     vendorCode?: string
-    sitePrice?: number
     totalQuantity?: number
     supplierWBId?: number
-    spp?: number
-    supplierPrice?: number // Цена поставщика (из первого размера)
-    supplierDiscount?: number // Скидка поставщика (общая на товар)
     photoTmUrl?: string
     photoC516x688Url?: string
     cardUpdatedAt?: Date

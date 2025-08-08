@@ -125,7 +125,6 @@ export const createSupplierKey = async (formData: SupplierFormData): Promise<Sup
 
 	const tokenInfo: SupplierTokenInfo = validationResult.supplierInfo || {
 		hasContentAccess: false,
-		hasPriceAccess: false,
 		isReadOnly: true,
 		isSandbox: false,
 		accessCategories: [],
@@ -258,7 +257,6 @@ export const updateSupplierKey = async ({ id, key }: { id: string; key: string }
 	// Получение информации о токене
 	const tokenInfo: SupplierTokenInfo = validationResult.supplierInfo || {
 		hasContentAccess: false,
-		hasPriceAccess: false,
 		isReadOnly: true,
 		isSandbox: false,
 		accessCategories: [],

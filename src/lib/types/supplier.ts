@@ -52,7 +52,6 @@ export type ApiDebugInfo = {
 
 export type SupplierTokenInfo = {
 	hasContentAccess: boolean
-	hasPriceAccess: boolean
 	isReadOnly: boolean
 	isSandbox: boolean
 	accessCategories: string[]
@@ -84,7 +83,6 @@ export interface WildberriesTokenInfo {
 export interface DecodedToken {
 	isValid: boolean
 	hasContentAccess: boolean
-	hasPriceAccess: boolean
 	isReadOnly: boolean
 	isSandbox: boolean
 	accessCategories: string[]
@@ -98,9 +96,9 @@ export interface WBVariant {
 	nmID: number
 	sku: string
 	barcode: string
-	price: number // Цена без скидки (Розница)
-	discount?: number // Скидка в %
-	discountedPrice?: number // Цена со скидкой
+    price?: number // (удалено из логики; поле не используется)
+    discount?: number // (удалено из логики; поле не используется)
+    discountedPrice?: number // (удалено из логики; поле не используется)
 	// Другие поля варианта, если нужны
 }
 
@@ -143,7 +141,7 @@ export interface WBProductCard {
 		chrtID?: number // (из примера)
 		techSize: string // Размер поставщика (например, S, M, L, 42, 176/88A)
 		wbSize: string // Размер WB (часто совпадает с techSize)
-		price?: number // Цена розничная (цена без скидки) - делаем опциональным, если может отсутствовать
+        price?: number // (удалено из логики; поле не используется)
 		skus: string[] // Список баркодов, соответствующих этому размеру
 		// могут быть и другие поля, такие как остатки (stocks), но они приходят из другого эндпоинта
 	}>
@@ -239,87 +237,7 @@ export interface GetProductsListResult {
 	totalAvailable?: number // Общее количество товаров по фильтру от WB
 }
 
-export interface WBPriceSize {
-	sizeID: number
-	price: number
-	discountedPrice: number
-	clubDiscountedPrice: number
-	techSizeName: string
-}
-
-export interface WBPrice {
-	nmID: number
-	vendorCode: string
-	sizes: WBPriceSize[]
-	currencyIsoCode4217: string
-	discount: number
-	clubDiscount: number
-	editableSizePrice: boolean
-}
-
-export interface WBPriceResponse {
-	data: {
-		listGoods: WBPrice[]
-		total?: number // Общее количество товаров
-	}
-	error: boolean
-	errorText: string
-}
-
-export interface WBSetPriceRequest {
-	data: WBPrice[]
-}
-
-export interface WBSetPriceResponse {
-	data: {
-		id: number
-		alreadyExists: boolean
-	}
-	error: boolean
-	errorText: string
-}
-
-// Типы для нового метода uploadPricesTask
-export interface WBUploadPriceItem {
-	nmID: number
-	price: number
-	discount: number
-}
-
-export interface WBUploadPricesRequest {
-	data: WBUploadPriceItem[]
-}
-
-export interface WBUploadTaskErrorDetail {
-	nmID?: number
-	message?: string
-	// ... другие возможные поля специфичные для ошибок по товарам
-}
-
-export interface WBUploadTaskDataPayloadItem {
-	nmID: number
-	price: number
-	discount: number
-}
-
-// Это определение для WBBatchUploadResult, если его нет
-export interface WBBatchUploadResult {
-	success: boolean
-	taskId?: number
-	error?: string
-	errorCode?: string
-	errorDetails?: Record<string, unknown> | string | null // Используем Record<string, unknown>
-	itemCount: number
-}
-
-export interface WBUploadPricesResponse {
-	success: boolean
-	taskId?: number
-	error?: string
-	batchResults?: WBBatchUploadResult[] // Теперь тип должен быть найден
-	errorDetails?: Record<string, unknown> | string | null // Используем Record<string, unknown>
-	logId?: ObjectId
-}
+// Удалены все типы, связанные с ценами/репрайсером
 
 // Для информации о загрузке задачи (из /api/v2/buffer/tasks или /api/v2/history/tasks)
 // ... existing code ...

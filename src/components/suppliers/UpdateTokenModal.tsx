@@ -204,18 +204,6 @@ export function UpdateTokenModal({ show, onCloseAction, supplier, onTokenUpdated
 											</span>
 										</div>
 										<div className='p-3 bg-gray-900 rounded-lg'>
-											<span className='font-medium block mb-1'>Доступ к Ценам и скидкам: </span>
-											<span
-												className={`px-2 py-1 rounded-lg inline-block ${
-													debugInfo.data.supplierInfo.hasPriceAccess
-														? 'text-green-400 bg-green-900/20'
-														: 'text-red-400 bg-red-900/20'
-												}`}
-											>
-												{debugInfo.data.supplierInfo.hasPriceAccess ? 'Да' : 'Нет'}
-											</span>
-										</div>
-										<div className='p-3 bg-gray-900 rounded-lg'>
 											<span className='font-medium block mb-1'>Только для чтения: </span>
 											<span
 												className={`px-2 py-1 rounded-lg inline-block ${

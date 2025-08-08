@@ -1,14 +1,10 @@
 import {
-	DecodedToken,
-	GetProductsListParams,
-	GetProductsListResult,
-	InitProductListParams,
-	ProductPageResult,
-	ValidateApiKeyResult,
-	WBPrice,
-	WBSetPriceResponse,
-	WBUploadPriceItem,
-	WBUploadPricesResponse,
+    DecodedToken,
+    GetProductsListParams,
+    GetProductsListResult,
+    InitProductListParams,
+    ProductPageResult,
+    ValidateApiKeyResult,
 } from '@/lib/types/supplier'
 import { WildberriesAPIBase } from './wildberries/WildberriesAPIBase'
 import {
@@ -16,12 +12,7 @@ import {
 	decodeToken as decodeTokenFunc,
 	validateApiKey as validateApiKeyFunc,
 } from './wildberries/authMethods'
-import {
-	getAllPrices as getAllPricesFunc,
-	getPriceByNmId as getPriceByNmIdFunc,
-	setPrices as setPricesFunc,
-	uploadPricesTask as uploadPricesTaskFunc,
-} from './wildberries/priceMethods'
+
 import {
 	fetchNextProductPage as fetchNextProductPageFunc,
 	getProductsList as getProductsListFunc,
@@ -64,42 +55,7 @@ export class WildberriesAPI extends WildberriesAPIBase {
 		return fetchNextProductPageFunc(this)
 	}
 
-	// Price Methods
-	public async getPriceByNmId(nmId: number): Promise<{
-		success: boolean
-		data?: WBPrice
-		error?: string
-	}> {
-		return getPriceByNmIdFunc(this, nmId)
-	}
-
-	public async getAllPrices(options?: {
-		supplierId?: string
-		totalProducts?: number
-		updateTotalProductsCallback?: (supplierId: string, totalProducts: number) => Promise<void>
-	}): Promise<{
-		success: boolean
-		data?: WBPrice[]
-		error?: string
-	}> {
-		return getAllPricesFunc(this, options)
-	}
-
-	public async setPrices(prices: WBPrice[]): Promise<{
-		success: boolean
-		error?: string
-		results?: WBSetPriceResponse[]
-	}> {
-		return setPricesFunc(this, prices)
-	}
-
-	/**
-	 * @param updates - Массив объектов с данными для обновления цен.
-	 * @returns {Promise<WBUploadPricesResponse>} Результат выполнения задачи.
-	 */
-	public async uploadPricesTask(updates: WBUploadPriceItem[]): Promise<WBUploadPricesResponse> {
-		return uploadPricesTaskFunc(this, updates)
-	}
+    // Удалено: методы работы с ценами
 
 	// Supplier Methods
 	public async getSupplierLegacyInfo(): Promise<{
@@ -112,5 +68,3 @@ export class WildberriesAPI extends WildberriesAPIBase {
 
 	// getDebugInfo() is inherited from WildberriesAPIBase
 }
-
-export type { WBPrice }

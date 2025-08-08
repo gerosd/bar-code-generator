@@ -15,7 +15,6 @@ export function decodeToken(_this: WildberriesAPIBase): DecodedToken {
 			return {
 				isValid: false,
 				hasContentAccess: false,
-				hasPriceAccess: false,
 				isReadOnly: false,
 				isSandbox: false,
 				accessCategories: [],
@@ -66,7 +65,6 @@ export function decodeToken(_this: WildberriesAPIBase): DecodedToken {
 		return {
 			isValid: true,
 			hasContentAccess,
-			hasPriceAccess,
 			isReadOnly,
 			isSandbox,
 			accessCategories,
@@ -77,7 +75,6 @@ export function decodeToken(_this: WildberriesAPIBase): DecodedToken {
 		return {
 			isValid: false,
 			hasContentAccess: false,
-			hasPriceAccess: false,
 			isReadOnly: false,
 			isSandbox: false,
 			accessCategories: [],
@@ -167,14 +164,6 @@ export async function validateApiKey(_this: WildberriesAPIBase): Promise<Validat
 			}
 		}
 
-		if (!decodedToken.hasPriceAccess) {
-			return {
-				valid: false,
-				message: 'API-ключ не имеет доступа к категории "Цены и скидки"',
-				debugInfo: _this.debugInfo,
-			}
-		}
-
 		if (decodedToken.isReadOnly) {
 			return {
 				valid: false,
@@ -194,11 +183,10 @@ export async function validateApiKey(_this: WildberriesAPIBase): Promise<Validat
 		}
 
 		const sid =
-			decodedToken.decoded && typeof decodedToken.decoded.sid === 'string' ? decodedToken.decoded.sid : undefined
+			decodedToken.decoded ? decodedToken.decoded.sid : undefined
 
 		const supplierInfo: SupplierTokenInfo = {
 			hasContentAccess: decodedToken.hasContentAccess,
-			hasPriceAccess: decodedToken.hasPriceAccess,
 			isReadOnly: decodedToken.isReadOnly,
 			isSandbox: decodedToken.isSandbox,
 			accessCategories: decodedToken.accessCategories,

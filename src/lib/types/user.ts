@@ -7,8 +7,6 @@ export enum UserRole {
     SUPPORT = 'support',
 }
 
-// Тип для режима регулировки цены
-export type PriceAdjustmentMode = 'price' | 'discount'
 
 // Тип для методов аутентификации
 export interface AuthMethod {
@@ -29,10 +27,7 @@ export interface UserType {
     image?: string;
     roles: UserRole[];
     authMethods: AuthMethod[];
-    settings?: {
-        priceAdjustmentMode?: PriceAdjustmentMode;
-        priceTolerance?: number; // Толерантность цены в рублях (по умолчанию 0)
-    };
+    // Удалены настройки репрайсера
     availableClients?: string[]; // ID клиентов, в которых состоит пользователь
     currentClientId?: string; // ID текущего выбранного клиента
     createdAt: Date;

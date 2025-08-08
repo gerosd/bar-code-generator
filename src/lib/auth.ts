@@ -227,6 +227,19 @@ export const authOptions: NextAuthOptions = {
 
             const isLoginEvent = !!user;
 
+            // Обновление данных токена по запросу из клиента (useSession().update)
+            if (trigger === 'update' && sessionUpdateData) {
+                if (typeof sessionUpdateData.name === 'string') {
+                    token.name = sessionUpdateData.name;
+                }
+                if (typeof sessionUpdateData.email === 'string') {
+                    token.email = sessionUpdateData.email;
+                }
+                if (typeof (sessionUpdateData as any).image === 'string') {
+                    token.picture = (sessionUpdateData as any).image;
+                }
+            }
+
             if (isLoginEvent && user?.id) {
                 token.userId = user.id;
                 token.sub = user.id;

@@ -17,7 +17,7 @@ export default async function Home() {
                                 className="w-8 h-8 bg-gradient-to-r from-blue-900 to-indigo-900 rounded-lg flex items-center justify-center">
                                 <QrCode className="w-5 h-5 text-white"/>
                             </div>
-                            <span className="text-xl font-bold text-gray-200">ЧестныйЗнак</span>
+                            <span className="text-xl font-bold text-gray-200">BarMatrix</span>
                         </div>
                         <div className="hidden md:flex items-center space-x-8">
                             <Link href="/" className="text-gray-200 hover:text-blue-300">Главная</Link>
@@ -159,7 +159,7 @@ export default async function Home() {
                                 className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
                                 <QrCode className="w-5 h-5 text-white"/>
                             </div>
-                            <span className="text-xl font-bold">ЧестныйЗнак</span>
+                            <span className="text-xl font-bold">BarMatrix</span>
                         </div>
                         <p className="text-gray-400">
                             Профессиональное решение для дублирования маркировки товаров

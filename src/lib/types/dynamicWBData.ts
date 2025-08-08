@@ -1,12 +1,6 @@
 import type { ObjectId } from 'mongodb'
 
 /**
- * Определяет причину, по которой сработал репрайсер.
- * Используется для логирования и передачи состояния между воркерами.
- */
-export type ChangeTriggerType = 'EXTERNAL_INTERFERENCE' | 'MARKET_FLUCTUATION' | 'RULE_UPDATE'
-
-/**
  * Структура документа MongoDB для коллекции dynamicWBData.
  * Каждый документ представляет один товар (nmId).
  */
@@ -18,7 +12,6 @@ export interface DynamicWBDataDocument {
     lastUpdatedAt: Date // Общее время последнего обновления этого документа в MongoDB.
     cardUpdatedAt?: Date // Оригинальное время обновления карточки из API WB (Этап 1, поле updatedAt из ответа API). Используется для логики курсора на Этапе 1.
     cardDataFetchedAt?: Date // Когда данные карточки от поставщика (Этап 1) были в последний раз загружены.
-    priceDataFetchedAt?: Date // Когда данные о ценах поставщика (Этап 2) были в последний раз загружены.
     siteDataFetchedAt?: Date // Когда данные с сайта WB (Этап 3) были в последний раз загружены.
 
     // --- Основные данные о товаре (обновляются воркером, приоритет у данных с сайта WB (Этап 3), если доступны) ---
@@ -41,15 +34,8 @@ export interface DynamicWBDataDocument {
         // Можно добавить и другие размеры, если необходимо
     }
 
-    // --- Информация о ценах от поставщика (Этап 2) ---
-    supplierDiscount?: number // Общая скидка поставщика в % на весь nmID.
-
     // --- Агрегированная информация с сайта WB (Этап 3) ---
     siteTotalQuantity?: number // Общее количество остатков товара на сайте WB по всем размерам.
-
-    // --- Поля для быстрой сортировки/фильтрации (денормализованные данные) ---
-    firstSizeSitePrice?: number // Цена для покупателя на сайте WB для первого размера.
-    firstSizeSpp?: number // СПП (Скидка Постоянного Покупателя) в % на сайте WB для первого размера.
 
     // --- Детализация по размерам ---
     sizes: Array<{
@@ -57,14 +43,6 @@ export interface DynamicWBDataDocument {
         techSize: string // Технический размер.
         wbSize?: string // Размер WB.
         skus?: string[] // Массив баркодов (SKU).
-
-        // Цены от поставщика для этого размера
-        supplierPrice?: number // Цена поставщика до общей скидки на nmID
-        supplierDiscountedPrice?: number // Цена поставщика ПОСЛЕ общей скидки на nmID
-
-        // Данные с сайта WB для этого размера
-        sitePrice?: number // Финальная цена для покупателя на сайте WB
-        siteSpp?: number // СПП (Скидка Постоянного Покупателя) в % на сайте WB
         siteStocks?: Array<{
             warehouseId: number // ID склада WB
             quantity: number // Количество на складе WB
@@ -73,12 +51,4 @@ export interface DynamicWBDataDocument {
 
     // Технические поля
     createdAt?: Date // Дата создания документа (добавляется автоматически при upsert)
-    priceStateLastChangedAt?: Date // Время, когда было зафиксировано последнее изменение цены
-
-    /**
-     * Определяет причину последнего изменения цены,
-     * чтобы воркер-слушатель мог на нее отреагировать без дополнительных запросов.
-     * Устанавливается в `product-aggregator-worker`.
-     */
-    lastChangeTrigger?: ChangeTriggerType | null
 }

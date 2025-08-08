@@ -37,6 +37,26 @@ export const getUserById = async (id: string): Promise<User | null> => {
 }
 
 /**
+ * Найти пользователя по email среди разных полей (id/email/authMethods.email)
+ */
+export const findUserByAnyEmail = async (email: string): Promise<User | null> => {
+    try {
+        return await executeMongoOperation(async () => {
+            const collection = await getUsersCollection()
+            return collection.findOne({
+                $or: [
+                    { _id: email },
+                    { email },
+                    { authMethods: { $elemMatch: { provider: 'credentials', email } } },
+                ],
+            } as unknown as Filter<User>)
+        }, `поиске пользователя по email: ${email}`)
+    } catch (error) {
+        return null
+    }
+}
+
+/**
  * Создать или обновить пользователя
  * @param userData Данные пользователя
  * @returns Результат операции
@@ -56,11 +76,6 @@ export const upsertUser = async (userData: Partial<User> & { _id: string }): Pro
             if (!existingUser) {
                 userUpdateData.createdAt = now
                 userUpdateData.roles = [UserRole.USER]
-                userUpdateData.settings = {priceAdjustmentMode: 'price', priceTolerance: 0}
-            } else {
-                if (userData.settings) {
-                    userUpdateData.settings = {...existingUser.settings, ...userData.settings}
-                }
             }
 
             const result = await collection.updateOne({_id: userData._id}, {$set: userUpdateData}, {upsert: true})

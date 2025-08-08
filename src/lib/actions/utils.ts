@@ -1,9 +1,8 @@
 'use server'
 
 import { WildberriesAPI } from '@/lib/api/wildberries'
-import { WildberriesProductService } from '@/lib/api/wildberries-product'
 import { authOptions } from '@/lib/auth'
-import { endMeasure, logger, measureAsync, startMeasure } from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { getServerSession } from 'next-auth'
 import { cookies } from 'next/headers'
 
@@ -86,63 +85,7 @@ export const maskToken = async (token: string): Promise<string> => {
  * @param nmIds Массив nmIds
  * @returns Результат запроса с данными о ценах и остатках
  */
-export const getProductsWBPrices = async (
-	nmIds: number[]
-): Promise<{
-	success: boolean
-	data?: Array<{
-		id: number
-		price: number | null
-		stock?: number
-		name: string
-		brand?: string
-	}>
-	error?: string
-}> => {
-	const metricId = startMeasure('getProductsWBPrices', { nmIdsCount: nmIds?.length || 0 })
-
-	try {
-		if (!nmIds || nmIds.length === 0) {
-			endMeasure(metricId, { result: 'empty' })
-			return { success: true, data: [] }
-		}
-
-		// Измеряем время получения данных от API WB
-		const productsInfo = await measureAsync(
-			() => WildberriesProductService.getProductsInfo(nmIds),
-			'WildberriesProductService.getProductsInfo',
-			{ nmIdsCount: nmIds.length }
-		)
-
-		const relevantData = productsInfo.map((p) => {
-			// Извлекаем цену первого размера, если он есть
-			const currentPrice =
-				p.sizes &&
-				p.sizes.length > 0 &&
-				!isNaN(p.sizes[0].sitePrice)
-					? p.sizes[0].sitePrice
-					: null
-			return {
-				id: p.id,
-				price: currentPrice,
-				stock: p.totalQuantity ?? 0,
-				name: p.name ?? '',
-				brand: p.brand ?? '',
-			}
-		})
-
-		endMeasure(metricId, {
-			success: true,
-			dataCount: relevantData.length,
-			requestedCount: nmIds.length,
-		})
-
-		return { success: true, data: relevantData }
-	} catch (error) {
-		logger.performance('[SERVER_ACTION_ERROR] getProductsWBPrices:', { error })
-		return { success: false, error: 'Ошибка при получении данных о товарах' }
-	}
-}
+// Удалено: логика получения цен/остатков с WB
 
 /**
  * Проверяет валидность API-ключа Wildberries
@@ -171,7 +114,3 @@ export const validateWildberriesApiKey = async (key: string) => {
 		}
 	}
 }
-
-/**
- * Безопасно получает свойство объекта по пути.
- */

@@ -2,6 +2,7 @@ import { ServerClientSelector } from '@/components/shared/ServerClientSelector';
 import { auth } from '@/lib/auth';
 import { FaUserCircle } from 'react-icons/fa';
 import BurgerButton from './BurgerButton';
+import Link from 'next/link';
 
 const ServerHeader = async () => {
     const session = await auth();
@@ -13,17 +14,17 @@ const ServerHeader = async () => {
                     {/* Кнопка бургер-меню, видна только на мобильных (до md) */}
                     <BurgerButton />
                     <h1 className='text-lg md:text-xl font-semibold text-gray-800 dark:text-white ml-2 md:ml-0'>
-                        вписать название
+                        BarMatrix
                     </h1>
                 </div>
 
                 <div className='flex items-center space-x-2 md:space-x-4'>
                     <ServerClientSelector />
                     {session?.user && (
-                        <div className='text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white flex items-center'>
-							<span className='hidden sm:inline mr-2 text-sm'>
-								{session.user.name || session.user.email}
-							</span>
+                        <Link href='/profile' className='text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white flex items-center'>
+                            <span className='hidden sm:inline mr-2 text-sm'>
+                                {session.user.name || session.user.email}
+                            </span>
                             {session.user.image ? (
                                 <img
                                     src={session.user.image}
@@ -33,7 +34,7 @@ const ServerHeader = async () => {
                             ) : (
                                 <FaUserCircle className='h-8 w-8 text-gray-400' />
                             )}
-                        </div>
+                        </Link>
                     )}
                 </div>
             </div>
