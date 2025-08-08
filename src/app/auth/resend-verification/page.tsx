@@ -1,9 +1,9 @@
-import { ResendVerificationForm } from "@/components/auth/ResendVerificationForm";
+import {ResendVerificationForm} from "@/components/auth/ResendVerificationForm";
 
 export default function ResendVerificationPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <ResendVerificationForm />
-    </div>
-  );
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <ResendVerificationForm/>
+        </div>
+    );
 }

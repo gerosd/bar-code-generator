@@ -94,11 +94,10 @@ export const verifyToken = (
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+        return jwt.verify(token, process.env.JWT_SECRET) as {
             email: string;
             type: string;
         };
-        return decoded;
     } catch (error) {
         logger.error("Ошибка верификации токена:", {metadata: {error}});
         return null;
@@ -128,7 +127,7 @@ export const sendVerificationEmail = async (
 
         // Для UnisenderGo важно использовать правильный формат отправителя
         const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "";
-        const fromName = "SuperBot Repricer";
+        const fromName = "BarMatrix";
 
         const mailOptions = {
             // Используем правильный формат From для UnisenderGo
@@ -139,30 +138,30 @@ export const sendVerificationEmail = async (
             headers: {
                 "Reply-To": fromEmail,
                 "Return-Path": fromEmail,
-                "X-Mailer": "SuperBot Repricer",
+                "X-Mailer": "BarMatrix",
             } as { [key: string]: string },
             html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Подтверждение email адреса</h2>
-          <p>Здравствуйте!</p>
-          <p>Для завершения регистрации в приложении SuperBot Repricer, пожалуйста, подтвердите ваш email адрес.</p>
-          <p>Нажмите на кнопку ниже для подтверждения:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" 
-               style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Подтвердить email
-            </a>
-          </div>
-          <p>Или скопируйте эту ссылку в браузер:</p>
-          <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
-          <p>Ссылка действительна в течение 24 часов.</p>
-          <p>Если вы не регистрировались в нашем приложении, просто проигнорируйте это письмо.</p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #666; font-size: 12px;">
-            Это автоматическое письмо, не отвечайте на него.
-          </p>
-        </div>
-      `,
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">Подтверждение email адреса</h2>
+                    <p>Здравствуйте!</p>
+                    <p>Для завершения регистрации в приложении BarMatrix, пожалуйста, подтвердите ваш email адрес.</p>
+                    <p>Нажмите на кнопку ниже для подтверждения:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${verificationUrl}" 
+                            style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        Подтвердить email
+                        </a>
+                    </div>
+                    <p>Или скопируйте эту ссылку в браузер:</p>
+                    <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
+                    <p>Ссылка действительна в течение 24 часов.</p>
+                    <p>Если вы не регистрировались в нашем приложении, просто проигнорируйте это письмо.</p>
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                    <p style="color: #666; font-size: 12px;">
+                        Это автоматическое письмо, не отвечайте на него.
+                    </p>
+                </div>
+            `,
         };
 
         const result = await transporter.sendMail(mailOptions);
@@ -200,7 +199,7 @@ export const sendVerificationSuccessEmail = async (
         }
 
         const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "";
-        const fromName = "SuperBot Repricer";
+        const fromName = "BarMatrix";
 
         const mailOptions = {
             from: `"${fromName}" <${fromEmail}>`,
@@ -209,21 +208,21 @@ export const sendVerificationSuccessEmail = async (
             headers: {
                 "Reply-To": fromEmail,
                 "Return-Path": fromEmail,
-                "X-Mailer": "SuperBot Repricer",
+                "X-Mailer": "BarMatrix",
             } as { [key: string]: string },
             html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #28a745;">Email успешно подтвержден!</h2>
-          <p>Здравствуйте!</p>
-          <p>Ваш email адрес был успешно подтвержден в приложении SuperBot Repricer.</p>
-          <p>Теперь вы можете использовать все функции приложения.</p>
-          <p>Спасибо за регистрацию!</p>
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #666; font-size: 12px;">
-            Это автоматическое письмо, не отвечайте на него.
-          </p>
-        </div>
-      `,
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #28a745;">Email успешно подтвержден!</h2>
+                    <p>Здравствуйте!</p>
+                    <p>Ваш email адрес был успешно подтвержден в приложении BarMatrix.</p>
+                    <p>Теперь вы можете использовать все функции приложения.</p>
+                    <p>Спасибо за регистрацию!</p>
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                    <p style="color: #666; font-size: 12px;">
+                        Это автоматическое письмо, не отвечайте на него.
+                    </p>
+                </div>
+            `,
         };
 
         const result = await transporter.sendMail(mailOptions);
