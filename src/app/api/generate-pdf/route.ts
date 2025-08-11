@@ -16,20 +16,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Определяем, нужно ли генерировать EAN-13 или DataMatrix
-        let imageBuffer: Buffer;
-        let isEAN13 = false;
-        if (/^\d{13}$/.test(scannedData)) {
-            // Если 13 цифр — генерируем EAN-13
-            imageBuffer = await generateEAN13Barcode(scannedData, options);
-            isEAN13 = true;
-        } else {
-            // Иначе DataMatrix
-            imageBuffer = await generateDataMatrix(scannedData, options);
-        }
-        const imageBase64 = `data:image/png;base64,${imageBuffer.toString('base64')}`;
+        // Подготовка изображений для двухстраничного PDF (если возможно)
+        const isScannedEAN13 = /^\d{13}$/.test(scannedData);
 
-        // Генерируем PDF на сервере
+        // Генерация PDF на сервере: формат этикетки 58x40 мм, ландшафт
         const doc = new jsPDF({
             orientation: 'landscape',
             unit: 'mm',
@@ -39,22 +29,36 @@ export async function POST(request: NextRequest) {
         doc.addFont('Roboto.ttf', 'Roboto', 'normal');
         doc.setFont('Roboto', 'normal');
 
-        if (isEAN13) {
-            // Для EAN-13: штрихкод почти на весь стикер, с небольшими отступами
-            doc.addImage(imageBase64, 'PNG', 2, 2, 54, 36); // 2мм отступы
+        if (isScannedEAN13) {
+            // Сканировали штрихкод — печатаем только страницу EAN-13
+            const eanImageBuffer = await generateEAN13Barcode(scannedData, options);
+            const eanImageBase64 = `data:image/png;base64,${eanImageBuffer.toString('base64')}`;
+            doc.addImage(eanImageBase64, 'PNG', 2, 2, 54, 36);
         } else {
-            // Для DataMatrix оставляем как было
-            doc.addImage(imageBase64, 'PNG', 2, 2, 16, 16);
-        }
-        // Добавим название и размер товара
-        if (productName && !isEAN13) {
-            doc.setFontSize(10);
-            doc.text(productName, 20, 8, { maxWidth: 36 });
-        }
+            // Сканировали DataMatrix — печатаем 1-я страница: DataMatrix
+            const dmImageBuffer = await generateDataMatrix(scannedData, options);
+            const dmImageBase64 = `data:image/png;base64,${dmImageBuffer.toString('base64')}`;
 
-        if (productSize && !isEAN13) {
-            doc.setFontSize(9);
-            doc.text(`Размер: ${productSize}`, 20, 14, { maxWidth: 36 });
+            // Страница 1: DataMatrix + текст
+            doc.addImage(dmImageBase64, 'PNG', 36, 18, 20, 20);
+            if (productName) {
+                doc.setFontSize(10);
+                doc.text(productName, 2, 8, { maxWidth: 36 });
+            }
+            if (productSize) {
+                doc.setFontSize(9);
+                doc.text(`Размер: ${productSize}`.trim(), 2, 26, { maxWidth: 36 });
+            }
+
+            // Попытаться извлечь EAN-13 из DataMatrix: 13 символов после первых 3
+            const barcodeCandidate = scannedData.slice(3, 16);
+            if (/^\d{13}$/.test(barcodeCandidate)) {
+                const eanImageBuffer = await generateEAN13Barcode(barcodeCandidate, options);
+                const eanImageBase64 = `data:image/png;base64,${eanImageBuffer.toString('base64')}`;
+                // Страница 2: EAN-13
+                doc.addPage([58, 40], 'landscape');
+                doc.addImage(eanImageBase64, 'PNG', 2, 2, 54, 36);
+            }
         }
 
         const pdfBuffer = doc.output('arraybuffer');
@@ -64,7 +68,7 @@ export async function POST(request: NextRequest) {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="barcode.pdf ${Date.now()}"`,
+                'Content-Disposition': `attachment; filename="labels.pdf"`,
             },
         });
     } catch (error) {

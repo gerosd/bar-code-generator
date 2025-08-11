@@ -71,8 +71,8 @@ export default function CreateDuplicateWindow() {
     }, []);
 
     // Замена русских букв на английские с учетом регистра
-    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const rusText = event.target.value;
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rusText = e.target.value;
         const engText = convertLayout(rusText);
         setScannedData(engText);
     }
@@ -105,19 +105,12 @@ export default function CreateDuplicateWindow() {
                         //productName и productSize останутся пустыми
                     }
                 }
-                // Печать страницы с datamatrix
+                // Печать комбинированного PDF (две страницы: DM и EAN-13 при наличии)
                 await printPDF({
                     scannedData: dataMatrix,
                     productName,
                     productSize,
                 });
-                // Печать страницы с EAN-13 (если есть)
-                if (isEAN13) {
-                    await printPDF({
-                        scannedData: barcodeCandidate,
-                        productName,
-                    });
-                }
             } finally {
                 setLoading(false);
                 setScannedData('');
@@ -126,18 +119,29 @@ export default function CreateDuplicateWindow() {
     };
 
     return (
-        <label htmlFor="dataMatrixCopy" className="w-100">
-            <input
-                className="w-full text-xl"
-                onKeyDown={handleEnterPress}
-                type='text'
-                id="dataMatrixCopy"
-                value={scannedData}
-                onChange={handleInputChange}
-                autoFocus
-                ref={inputRef}
-                disabled={loading}
-            />
-        </label>
+        <div>
+            <label htmlFor="dataMatrixCopy" className="w-full block">
+                <input
+                    className="w-full text-xl outline-2 rounded-lg outline-blue-600 px-2 py-1"
+                    onKeyDown={handleEnterPress}
+                    type='text'
+                    id="dataMatrixCopy"
+                    value={scannedData}
+                    onChange={handleInputChange}
+                    autoFocus
+                    ref={inputRef}
+                    disabled={loading}
+                />
+            </label>
+            {loading && (
+                <div className="mt-3 flex items-center text-sm text-gray-700 dark:text-gray-300" role="status" aria-live="polite">
+                    <svg className="animate-spin mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    Генерация PDF...
+                </div>
+            )}
+        </div>
     );
 }
