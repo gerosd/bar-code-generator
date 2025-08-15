@@ -1,4 +1,4 @@
-//@ts-ignore - ошибка декларации в самой библиотеки, не влияет на работоспособность
+//@ts-expect-error - ошибка декларации в самой библиотеки, не влияет на работоспособность
 import bwipjs from 'bwip-js';
 
 export interface DataMatrixOptions {

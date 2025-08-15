@@ -38,7 +38,7 @@ export default function CreateDuplicateWindow() {
         'Б': '<', 'Ю': '>'
     }
 
-    const printPDF = async (payload: any) => {
+	const printPDF = async (payload: any) => {
         try {
             const response = await fetch('/api/generate-pdf', {
                 method: 'POST',
@@ -68,7 +68,7 @@ export default function CreateDuplicateWindow() {
 
     const convertLayout = useCallback((text: string) => {
         return text.split('').map(char => layoutMap[char] || char).join('');
-    }, []);
+    }, [layoutMap]);
 
     // Замена русских букв на английские с учетом регистра
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +77,7 @@ export default function CreateDuplicateWindow() {
         setScannedData(engText);
     }
 
-    const handleEnterPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+	const handleEnterPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             const dataMatrix = scannedData.trim();
             if (!dataMatrix || dataMatrix.length <= 16) { // 3 + 13 минимум
@@ -105,12 +105,11 @@ export default function CreateDuplicateWindow() {
                         //productName и productSize останутся пустыми
                     }
                 }
-                // Печать комбинированного PDF (две страницы: DM и EAN-13 при наличии)
-                await printPDF({
-                    scannedData: dataMatrix,
-                    productName,
-                    productSize,
-                });
+				await printPDF({
+					scannedData: dataMatrix,
+					productName,
+					productSize,
+				});
             } finally {
                 setLoading(false);
                 setScannedData('');
@@ -118,8 +117,8 @@ export default function CreateDuplicateWindow() {
         }
     };
 
-    return (
-        <div>
+	return (
+		<div>
             <label htmlFor="dataMatrixCopy" className="w-full block">
                 <input
                     className="w-full text-xl outline-2 rounded-lg outline-blue-600 px-2 py-1"
@@ -139,7 +138,7 @@ export default function CreateDuplicateWindow() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                     </svg>
-                    Генерация PDF...
+					Генерация PDF...
                 </div>
             )}
         </div>

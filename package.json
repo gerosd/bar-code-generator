@@ -1,5 +1,6 @@
 {
     "name": "barcode_generator",
+    "author": "gerosd",
     "version": "0.1.0",
     "private": true,
     "scripts": {

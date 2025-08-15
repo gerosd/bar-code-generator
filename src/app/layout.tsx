@@ -4,6 +4,7 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { ClientProvider } from "@/components/providers/ClientProvider";
 import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import {ToastContainer} from "@/components/ui/ToastContainer";
 
 const roboto = Roboto({
     variable: "--font-roboto",
@@ -34,6 +35,7 @@ const RootLayout = ({
         <SessionProvider>
             <ClientProvider>
                 {children}
+                <ToastContainer/>
             </ClientProvider>
         </SessionProvider>
         </body>
