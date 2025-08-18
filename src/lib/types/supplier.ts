@@ -91,17 +91,6 @@ export interface DecodedToken {
 	expiresAt?: Date
 }
 
-// Новые типы для getProductsList
-export interface WBVariant {
-	nmID: number
-	sku: string
-	barcode: string
-    price?: number // (удалено из логики; поле не используется)
-    discount?: number // (удалено из логики; поле не используется)
-    discountedPrice?: number // (удалено из логики; поле не используется)
-	// Другие поля варианта, если нужны
-}
-
 export interface WBProductDimension {
 	length: number
 	width: number
@@ -141,7 +130,6 @@ export interface WBProductCard {
 		chrtID?: number // (из примера)
 		techSize: string // Размер поставщика (например, S, M, L, 42, 176/88A)
 		wbSize: string // Размер WB (часто совпадает с techSize)
-        price?: number // (удалено из логики; поле не используется)
 		skus: string[] // Список баркодов, соответствующих этому размеру
 		// могут быть и другие поля, такие как остатки (stocks), но они приходят из другого эндпоинта
 	}>

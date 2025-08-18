@@ -9,7 +9,6 @@
 		"WORKER": true
 	},
 	"debugFunctions": {
-		"getAllPrices": false,
 		"getProductsInfo": false,
 		"fetchProducts": false,
 		"updateTotalProducts": false,

@@ -126,12 +126,6 @@ export async function getSupplierLegacyInfo(api: WildberriesAPIBase): Promise<{
 
 		const productDetail = cardResponseData.data.products[0]
 
-		if (typeof productDetail.supplierId !== 'number') {
-			const errorMsg = 'Ответ от card.wb.ru не содержит supplierId или он некорректного типа.'
-			logger.api(`[API:${apiKeyShort}] ${errorMsg}`, { metadata: { productDetail } })
-			return { success: false, error: errorMsg }
-		}
-
 		const oldId = productDetail.supplierId
 		const supplierName = productDetail.supplier || 'Имя не указано'
 

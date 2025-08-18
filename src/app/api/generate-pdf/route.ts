@@ -4,6 +4,8 @@ import robotoBase64 from '@/utils/robotoBase64';
 import jsPDF from 'jspdf';
 import { findProductByBarcode } from '@/lib/mongo/dynamicWBData';
 
+
+
 export async function POST(request: NextRequest) {
     try {
         const body: PDFGenerationRequest = await request.json();

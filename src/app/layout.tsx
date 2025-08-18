@@ -5,6 +5,7 @@ import { ClientProvider } from "@/components/providers/ClientProvider";
 import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import {ToastContainer} from "@/components/ui/ToastContainer";
+import {ToastProvider} from "@/components/providers/ToastProvider";
 
 const roboto = Roboto({
     variable: "--font-roboto",
@@ -33,10 +34,12 @@ const RootLayout = ({
         </head>
         <body className={`${roboto.variable} ${robotoMono.variable} antialiased bg-gray-900`}>
         <SessionProvider>
-            <ClientProvider>
-                {children}
-                <ToastContainer/>
-            </ClientProvider>
+            <ToastProvider>
+                <ClientProvider>
+                    {children}
+                    <ToastContainer/>
+                </ClientProvider>
+            </ToastProvider>
         </SessionProvider>
         </body>
         </html>
