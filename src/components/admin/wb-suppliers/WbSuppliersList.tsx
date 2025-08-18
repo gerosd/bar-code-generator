@@ -2,6 +2,7 @@
 
 import type { WbSupplierSafeData } from '@/lib/types/wbSupplier'
 import { Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow } from 'flowbite-react'
+import React from "react";
 
 interface WbSuppliersListProps {
 	suppliers: WbSupplierSafeData[]

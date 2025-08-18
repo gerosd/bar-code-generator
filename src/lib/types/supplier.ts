@@ -1,5 +1,3 @@
-import { ObjectId } from 'mongodb'
-
 // Типы для поставщиков без зависимостей от MongoDB
 
 export interface SupplierType {

@@ -1,4 +1,5 @@
 import CreateDuplicateWindow from "@/components/generate/CreateDuplicateWindow";
+import ScanHistory from "@/components/generate/ScanHistory";
 import { PageTitle } from "@/components/layout/PageTitle";
 
 export default function GeneratePage() {
@@ -18,6 +19,11 @@ export default function GeneratePage() {
                         </p>
                     </div>
                     <CreateDuplicateWindow />
+                </div>
+                <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-white">История сканирования</h2>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Последние отсканированные коды</p>
+                    <ScanHistory />
                 </div>
             </div>
         </div>

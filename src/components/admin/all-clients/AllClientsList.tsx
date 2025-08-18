@@ -2,7 +2,8 @@
 
 import type { AdminClientView } from '@/lib/actions/admin-actions'
 import { Button, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow } from 'flowbite-react'
-import Link from 'next/link' // Для будущих кнопок действий
+import Link from 'next/link'
+import React from "react"; // Для будущих кнопок действий
 
 interface AllClientsListProps {
 	clients: AdminClientView[]

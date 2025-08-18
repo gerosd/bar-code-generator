@@ -6,6 +6,7 @@ import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import {ToastContainer} from "@/components/ui/ToastContainer";
 import {ToastProvider} from "@/components/providers/ToastProvider";
+import React from "react";
 
 const roboto = Roboto({
     variable: "--font-roboto",
