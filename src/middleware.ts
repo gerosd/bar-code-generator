@@ -89,9 +89,10 @@ export default withAuth(
 // - auth/error - исключает страницу ошибок
 // - auth/verify - исключает страницу верификации email
 // - auth/resend-verification - исключает страницу повторной отправки верификации
+// - docs - исключает документацию
 // - .* - захватывает все остальные пути
 export const config = {
     matcher: [
-        "/((?!api|_next/static|_next/image|favicon.ico|auth/signin|auth/error|auth/verify|auth/resend-verification).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|auth/signin|auth/error|auth/verify|auth/resend-verification|docs).*)",
     ],
 };

@@ -28,7 +28,7 @@ export const ProductDatabaseList: React.FC<ProductDatabaseListProps> = ({ produc
 
 	const router = useRouter()
 
-	// Обновляем локальное состояние, если изменился проп
+	// Обновляем локальное состояние, если изменился пропс
 	useEffect(() => {
 		setProducts(initialProducts)
 	}, [initialProducts])
@@ -149,9 +149,6 @@ export const ProductDatabaseList: React.FC<ProductDatabaseListProps> = ({ produc
 								<TableHeadCell>nmID (WB)</TableHeadCell>
 								<TableHeadCell>Артикул поставщика</TableHeadCell>
 								<TableHeadCell>Товар</TableHeadCell>
-								<TableHeadCell>Цена сайта (руб)</TableHeadCell>
-								<TableHeadCell>Цена/скидка поставщика</TableHeadCell>
-								<TableHeadCell>СПП (%)</TableHeadCell>
 								<TableHeadCell>Общий остаток (шт)</TableHeadCell>
 								<TableHeadCell>ID поставщика WB</TableHeadCell>
 								<TableHeadCell>Дата обновления</TableHeadCell>

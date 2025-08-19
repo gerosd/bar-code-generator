@@ -202,7 +202,7 @@ export default function CreateDuplicateWindow() {
                         <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">Этот код уже сканировался {dupInfoRef.current?.count ?? 1} раз(а). Напечатать еще?</p>
                         <div className="mt-4 flex justify-end gap-2">
                             <button
-                                className="px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200"
+                                className="px-3 py-1.5д rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200"
                                 onClick={() => { setConfirmOpen(false); window.dispatchEvent(new CustomEvent('scan-confirm', { detail: false })); }}
                             >
                                 Отмена

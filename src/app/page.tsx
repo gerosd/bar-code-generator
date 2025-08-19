@@ -1,5 +1,5 @@
 import {Button, Card} from 'flowbite-react';
-import {QrCode, FileText, Download, CheckCircle, Settings} from 'lucide-react';
+import {QrCode, FileText, CheckCircle, Settings} from 'lucide-react';
 import Link from "next/link";
 import {auth} from "@/lib/auth";
 
@@ -22,7 +22,7 @@ export default async function Home() {
                         <div className="hidden md:flex items-center space-x-8">
                             <Link href="/" className="text-gray-200 hover:text-blue-300">Главная</Link>
                             <a href="#" className="text-gray-200 hover:text-blue-300">О сервисе</a>
-                            <a href="#" className="text-gray-200 hover:text-blue-300">Документация</a>
+                            <Link href="/docs" className="text-gray-200 hover:text-blue-300">Документация</Link>
                             <a href="#" className="text-gray-200 hover:text-blue-300">Поддержка</a>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -88,19 +88,6 @@ export default async function Home() {
                             </div>
                             <p className="text-gray-200">
                                 Создание уникальных кодов маркировки в соответствии с требованиями Честного Знака
-                            </p>
-                        </Card>
-
-                        <Card className="hover:shadow-lg transition-shadow">
-                            <div className="flex items-center mb-4">
-                                <div
-                                    className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                                    <Download className="w-6 h-6 text-purple-600"/>
-                                </div>
-                                <h3 className="text-xl font-semibold text-gray-100">Экспорт в PDF</h3>
-                            </div>
-                            <p className="text-gray-200">
-                                Создание профессиональных документов с маркировкой для печати
                             </p>
                         </Card>
 

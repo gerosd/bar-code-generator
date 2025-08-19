@@ -1,15 +1,15 @@
 import {NextRequest, NextResponse} from 'next/server';
-import {type PDFGenerationRequest} from '@/utils/dataMatrix';
 import {findProductByBarcode} from '@/lib/mongo/dynamicWBData';
 import {findScanByCode, recordScan} from '@/lib/mongo/scanHistory';
 import net from 'net';
+import {PrintData} from "@/lib/types/generation";
 
 const PRINTER_IP = '10.222.10.86';
 const PRINTER_PORT = 9100;
 
 export async function POST(request: NextRequest) {
     try {
-        const body: PDFGenerationRequest = await request.json();
+        const body: PrintData = await request.json();
         const {scannedData, productName, productSize, nmId, vendorCode, dataMatrixCount, ean13Count} = body;
 
         if (!scannedData) {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         const isScannedEAN13 = /^\d{13}$/.test(scannedData);
 
         // Записываем факт сканирования DataMatrix для истории
-        // и используем для контроля повторного ввода на клиенте через отдельный API GET (см. ниже)
+        // и используем для контроля повторного ввода на клиенте через отдельный API GET (см. Ниже)
         await recordScan(scannedData);
 
         // Формируем итоговую ZPL-команду: одна TCP-сессия на все задания

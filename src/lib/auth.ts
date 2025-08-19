@@ -238,6 +238,25 @@ export const authOptions: NextAuthOptions = {
                 if (typeof (sessionUpdateData as any).image === 'string') {
                     token.picture = (sessionUpdateData as any).image;
                 }
+
+                // Специальный флаг для принудительного обновления доступных клиентов в токене
+                if ((sessionUpdateData as any).refreshAvailableClients) {
+                    const userIdFromToken =
+                        typeof token.userId === 'string'
+                            ? token.userId
+                            : typeof token.sub === 'string'
+                                ? token.sub
+                                : undefined;
+                    if (userIdFromToken) {
+                        try {
+                            const refreshedClients = await getClientsByUserId(userIdFromToken);
+                            token.availableClients = refreshedClients.map((c) => ({ id: c.id, name: c.name }));
+                        } catch (e) {
+                            // в случае ошибки просто оставляем существующее значение
+                            logger.auth('JWT Callback: Ошибка при обновлении availableClients по флагу refreshAvailableClients', { metadata: { error: e } });
+                        }
+                    }
+                }
             }
 
             if (isLoginEvent && user?.id) {

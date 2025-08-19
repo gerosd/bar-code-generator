@@ -3,7 +3,7 @@
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers, FaUser } from 'react-icons/fa'
+import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers, FaUser, FaBook } from 'react-icons/fa'
 
 interface SidebarProps {
     isAdmin: boolean
@@ -121,6 +121,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                         >
                             <FaUser className='w-5 h-5 mr-3' />
                             <span>Профиль</span>
+                        </Link>
+                    </li>
+
+                    <li>
+                        <Link
+                            href='/docs'
+                            onClick={handleLinkClick}
+                            className={`flex items-center p-3 text-base rounded-lg transition-colors ${
+                                isActive('/docs')
+                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                                    : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            <FaBook className='w-5 h-5 mr-3' />
+                            <span>Документация</span>
                         </Link>
                     </li>
 
