@@ -9,6 +9,16 @@ export interface ProductDatabaseView {
     photoTmUrl?: string
     photoC516x688Url?: string
     cardUpdatedAt?: Date
+    sizes?: Array<{
+        chrtId: number
+        techSize: string
+        wbSize?: string
+        skus?: string[]
+        siteStocks?: Array<{
+            warehouseId: number
+            quantity: number
+        }>
+    }>
 }
 
 import type { DynamicWBDataDocument } from './dynamicWBData'

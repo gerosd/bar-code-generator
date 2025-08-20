@@ -7,9 +7,36 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(200, Math.max(1, Number(limitParam ?? 50) || 50))
     try {
         const items = await findRecentScans(limit)
-        return NextResponse.json({ success: true, items: items.map(i => ({ code: i.code, scannedAt: i.scannedAt, count: i.count })) })
+        
+        // Безопасно обрабатываем каждый элемент
+        const safeItems = items.map(i => {
+            // Проверяем, что все поля существуют и имеют правильные типы
+            const safeItem = {
+                code: String(i.code || ''),
+                scannedAt: i.scannedAt.toISOString(),
+                count: Number(i.count || 0)
+            }
+            
+            // Убираем любые undefined или null значения
+            Object.keys(safeItem).forEach(key => {
+                if (safeItem[key as keyof typeof safeItem] === undefined || safeItem[key as keyof typeof safeItem] === null) {
+                    delete safeItem[key as keyof typeof safeItem]
+                }
+            })
+            
+            return safeItem
+        })
+        
+        return NextResponse.json({ 
+            success: true, 
+            items: safeItems
+        })
     } catch (error) {
-        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Внутренняя ошибка сервера' }, { status: 500 })
+        console.error('Error in scans API:', error)
+        return NextResponse.json({ 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Внутренняя ошибка сервера' 
+        }, { status: 500 })
     }
 }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import React, {useState, useEffect, useRef, useCallback} from 'react';
+import type { ProductDatabaseView } from '@/lib/types/product';
 
 export default function CreateDuplicateWindow() {
     const [scannedData, setScannedData] = useState<string>('');
@@ -12,6 +13,21 @@ export default function CreateDuplicateWindow() {
     const ean13CountRef = useRef<HTMLInputElement>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const dupInfoRef = useRef<{ code: string; count: number } | null>(null);
+
+    // Новые состояния для вкладок и выбора товара
+    const [activeTab, setActiveTab] = useState<'scan' | 'product'>('scan');
+    const [products, setProducts] = useState<ProductDatabaseView[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<ProductDatabaseView | null>(null);
+    const [selectedSize, setSelectedSize] = useState<{
+        chrtId: number;
+        techSize: string;
+        wbSize?: string;
+        skus?: string[];
+    } | null>(null);
+    const [productsLoading, setProductsLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [productInputData, setProductInputData] = useState<string>('');
+    const productInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const handleBlur = () => {
@@ -32,6 +48,72 @@ export default function CreateDuplicateWindow() {
             }
         }
     }, []);
+
+    // Загрузка списка товаров
+    useEffect(() => {
+        if (activeTab === 'product' && products.length === 0) {
+            loadProducts();
+        }
+    }, [activeTab, products.length]);
+
+    // Управление фокусом для поля ввода товара
+    useEffect(() => {
+        if (activeTab === 'product' && productInputRef.current) {
+            const handleBlur = () => {
+                // Небольшая задержка, чтобы не блокировать клики по товарам
+                setTimeout(() => {
+                    const activeElement = document.activeElement as HTMLElement | null;
+
+                    // Проверяем, что активный элемент не является полем поиска или другими важными элементами
+                    if (productInputRef.current &&
+                        activeElement !== productInputRef.current &&
+                        activeElement?.id !== 'productSearch' &&
+                        activeElement?.tagName !== 'BUTTON' &&
+                        !activeElement?.closest('button') &&
+                        !activeElement?.closest('input') &&
+                        !activeElement?.closest('select') &&
+                        !activeElement?.closest('textarea')) {
+                        productInputRef.current.focus();
+                    }
+                }, 100);
+            };
+
+            const input = productInputRef.current;
+            input.addEventListener('blur', handleBlur);
+            input.focus();
+
+            return () => {
+                input.removeEventListener('blur', handleBlur);
+            };
+        }
+    }, [activeTab]);
+
+    const loadProducts = async () => {
+        setProductsLoading(true);
+        try {
+            const response = await fetch('/api/products');
+            const result = await response.json();
+            if (result.success && result.data) {
+                setProducts(result.data);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки товаров:', error);
+        } finally {
+            setProductsLoading(false);
+        }
+    };
+
+    // Фильтрация товаров по поисковому запросу
+    const filteredProducts = products.filter(product =>
+        product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.vendorCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (Array.isArray(product.sizes) && product.sizes.some(size =>
+            Array.isArray(size.skus) && size.skus.some(sku =>
+                sku?.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+        ))
+    );
 
     // Требуется для замены русских букв на английские, т.к сканер эмулирует ввод с клавиатуры
     const layoutMap: Record<string, string> = {
@@ -71,6 +153,13 @@ export default function CreateDuplicateWindow() {
         const rusText = e.target.value;
         const engText = convertLayout(rusText);
         setScannedData(engText);
+    }
+
+    // Замена русских букв для поля ввода товара
+    const handleProductInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rusText = e.target.value;
+        const engText = convertLayout(rusText);
+        setProductInputData(engText);
     }
 
 	const handleEnterPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -144,32 +233,291 @@ export default function CreateDuplicateWindow() {
         }
     };
 
+    // Обработка Enter для поля ввода товара
+    const handleProductInputEnter = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && selectedProduct) {
+            const dataMatrix = productInputData.trim();
+            if (!dataMatrix || dataMatrix.length <= 12 || !selectedSize) {
+                setProductInputData('');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const sizeBarcode = selectedSize.skus?.[0]; // Берем штрихкод из выбранного размера.
+                // Печатаем DataMatrix код
+                await directPrint({
+                    scannedData: dataMatrix,
+                    productName: selectedProduct.title || '',
+                    productSize: selectedSize ? (selectedSize.wbSize || selectedSize.techSize) : '',
+                    nmId: selectedProduct.nmID,
+                    vendorCode: selectedProduct.vendorCode || '',
+                    dataMatrixCount,
+                    ean13Count,
+                    diffEAN13: sizeBarcode
+                });
+
+                setProductInputData('');
+            } catch (error) {
+                console.error('Ошибка печати:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
 	return (
 		<div>
-            <label htmlFor="dataMatrixCopy" className="w-full block">
-                <input
-                    className="w-full text-xl outline-2 rounded-lg outline-blue-600 px-2 py-1"
-                    onKeyDown={handleEnterPress}
-                    type='text'
-                    id="dataMatrixCopy"
-                    value={scannedData}
-                    onChange={handleInputChange}
-                    autoFocus
-                    ref={inputRef}
-                    autoComplete="off"
-                />
-            </label>
+            {/* Вкладки */}
+            <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
+                <nav className="-mb-px flex space-x-8">
+                    <button
+                        onClick={() => setActiveTab('scan')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activeTab === 'scan'
+                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                        }`}
+                    >
+                        Сканирование
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('product')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activeTab === 'product'
+                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                        }`}
+                    >
+                        Выбор товара
+                    </button>
+                </nav>
+            </div>
+
+            {/* Вкладка "Сканирование" */}
+            {activeTab === 'scan' && (
+                <div>
+                    <label htmlFor="dataMatrixCopy" className="w-full block">
+                        <input
+                            className="w-full text-xl outline-2 rounded-lg outline-blue-600 px-2 py-1"
+                            onKeyDown={handleEnterPress}
+                            type='text'
+                            id="dataMatrixCopy"
+                            value={scannedData}
+                            onChange={handleInputChange}
+                            autoFocus
+                            ref={inputRef}
+                            autoComplete="off"
+                        />
+                    </label>
+                </div>
+            )}
+
+            {/* Вкладка "Выбор товара" */}
+            {activeTab === 'product' && (
+                <div className="space-y-4">
+                    {/* Поле ввода DataMatrix для печати */}
+                    <div>
+                        <label htmlFor="productDataMatrixInput" className="w-full block">
+                            <span className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">
+                                Введите DataMatrix код для печати
+                            </span>
+                            <input
+                                className="w-full text-xl outline-2 rounded-lg outline-blue-600 px-2 py-1"
+                                onKeyDown={handleProductInputEnter}
+                                type='text'
+                                id="productDataMatrixInput"
+                                value={productInputData}
+                                onChange={handleProductInputChange}
+                                ref={productInputRef}
+                                autoComplete="off"
+                                placeholder="Отсканируйте или введите код..."
+                            />
+                        </label>
+                    </div>
+
+                    {/* Поиск товаров */}
+                    <div>
+                        <label htmlFor="productSearch" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Поиск товара
+                        </label>
+                        <input
+                            type="text"
+                            id="productSearch"
+                            placeholder="Введите название, артикул, бренд или штрихкод..."
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-900 dark:text-white"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => {
+                                // При фокусе на поле поиска временно отключаем автофокус
+                                if (productInputRef.current) {
+                                    productInputRef.current.removeEventListener('blur', productInputRef.current.onblur as any);
+                                }
+                            }}
+                            onBlur={() => {
+                                // При потере фокуса восстанавливаем автофокус
+                                setTimeout(() => {
+                                    if (productInputRef.current && document.activeElement !== productInputRef.current) {
+                                        productInputRef.current.focus();
+                                    }
+                                }, 200);
+                            }}
+                        />
+                    </div>
+
+                    {/* Список товаров */}
+                    <div className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                        {productsLoading ? (
+                            <div className="p-4 text-center text-gray-500">
+                                <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                                <p className="mt-2">Загрузка товаров...</p>
+                            </div>
+                        ) : filteredProducts.length === 0 ? (
+                            <div className="p-4 text-center text-gray-500">
+                                {searchQuery ? 'Товары не найдены' : 'Нет доступных товаров'}
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                                {filteredProducts.slice(0, 100).map((product) => (
+                                    <div
+                                        key={product.nmID}
+                                        className={`p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                                            selectedProduct?.nmID === product.nmID ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' : ''
+                                        }`}
+                                        onClick={() => {
+                                            setSelectedProduct(product);
+                                            setSelectedSize(null); // Сбрасываем выбранный размер при смене товара.
+                                            // При выборе товара временно отключаем автофокус
+                                            if (productInputRef.current) {
+                                                const currentBlurHandler = productInputRef.current.onblur;
+                                                setTimeout(() => {
+                                                    if (productInputRef.current && currentBlurHandler) {
+                                                        productInputRef.current.addEventListener('blur', currentBlurHandler as any);
+                                                    }
+                                                }, 300);
+                                            }
+                                        }}
+                                    >
+                                        <div className="flex items-start space-x-3">
+                                            {product.photoTmUrl && (
+                                                <img
+                                                    src={product.photoTmUrl}
+                                                    alt={product.title || ''}
+                                                    className="w-12 h-12 object-cover rounded border border-gray-200 dark:border-gray-600"
+                                                />
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                    {product.title || 'Без названия'}
+                                                </p>
+                                                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                                    {product.brand && (
+                                                        <p>Бренд: {product.brand}</p>
+                                                    )}
+                                                    {product.vendorCode && (
+                                                        <p>Артикул: {product.vendorCode}</p>
+                                                    )}
+                                                    <p>nmID: {product.nmID}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Информация о выбранном товаре */}
+                    {selectedProduct && (
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                                Выбранный товар:
+                            </h4>
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                {selectedProduct.title}
+                            </p>
+
+                            {/* Выбор размера */}
+                            {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                                <div className="mt-3">
+                                    <label className="block text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                                        Выберите размер:
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                                        {selectedProduct.sizes.map((size) => (
+                                            <button
+                                                key={size.chrtId}
+                                                onClick={() => setSelectedSize(size)}
+                                                onBlur={() => {
+                                                    // При потере фокуса восстанавливаем автофокус
+                                                    if (activeTab === 'product') {
+                                                        setTimeout(() => {
+                                                            if (productInputRef.current && document.activeElement !== productInputRef.current) {
+                                                                productInputRef.current.focus();
+                                                            }
+                                                        }, 200);
+                                                    }
+                                                }}
+                                                className={`p-2 text-xs rounded border transition-colors ${
+                                                    selectedSize?.chrtId === size.chrtId
+                                                        ? 'bg-blue-600 text-white border-blue-600'
+                                                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                }`}
+                                            >
+                                                <div className="font-medium">
+                                                    {size.wbSize || size.techSize}
+                                                </div>
+                                                {size.skus && size.skus.length > 0 && (
+                                                    <div className="text-xs opacity-75">
+                                                        Штрихкод: {size.skus[0]}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {selectedSize && (
+                                        <div className="mt-2 p-2 bg-blue-100 dark:bg-blue-800 rounded text-xs text-blue-800 dark:text-blue-200">
+                                            <strong>Выбран размер:</strong> {selectedSize.wbSize || selectedSize.techSize}
+                                            {selectedSize.skus && selectedSize.skus.length > 0 && (
+                                                <div>Штрихкод: {selectedSize.skus[0]}</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Общие настройки количества */}
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="block">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Количество DataMatrix</span>
                     <input
                         type="number"
                         min={1}
-                        className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1"
+                        className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-gray-900 dark:text-white"
                         value={dataMatrixCount}
-                        onChange={(e) => setDataMatrixCount(Math.max(0, Number(e.target.value) || 0))}
+                        onChange={(e) => setDataMatrixCount(Math.max(1, Number(e.target.value) || 1))}
                         ref={dataMatrixCountRef}
                         disabled={loading}
+                        onFocus={() => {
+                            // При фокусе на поле количества временно отключаем автофокус
+                            if (productInputRef.current && activeTab === 'product') {
+                                productInputRef.current.removeEventListener('blur', productInputRef.current.onblur as any);
+                            }
+                        }}
+                        onBlur={() => {
+                            // При потере фокуса восстанавливаем автофокус
+                            if (activeTab === 'product') {
+                                setTimeout(() => {
+                                    if (productInputRef.current && document.activeElement !== productInputRef.current) {
+                                        productInputRef.current.focus();
+                                    }
+                                }, 200);
+                            }
+                        }}
                     />
                 </label>
                 <label className="block">
@@ -177,11 +525,27 @@ export default function CreateDuplicateWindow() {
                     <input
                         type="number"
                         min={1}
-                        className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1"
+                        className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-gray-900 dark:text-white"
                         value={ean13Count}
-                        onChange={(e) => setEan13Count(Math.max(0, Number(e.target.value) || 0))}
+                        onChange={(e) => setEan13Count(Math.max(1, Number(e.target.value) || 1))}
                         ref={ean13CountRef}
                         disabled={loading}
+                        onFocus={() => {
+                            // При фокусе на поле количества временно отключаем автофокус
+                            if (productInputRef.current && activeTab === 'product') {
+                                productInputRef.current.removeEventListener('blur', productInputRef.current.onblur as any);
+                            }
+                        }}
+                        onBlur={() => {
+                            // При потере фокуса восстанавливаем автофокус
+                            if (activeTab === 'product') {
+                                setTimeout(() => {
+                                    if (productInputRef.current && document.activeElement !== productInputRef.current) {
+                                        productInputRef.current.focus();
+                                    }
+                                }, 200);
+                            }
+                        }}
                     />
                 </label>
             </div>
@@ -202,7 +566,7 @@ export default function CreateDuplicateWindow() {
                         <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">Этот код уже сканировался {dupInfoRef.current?.count ?? 1} раз(а). Напечатать еще?</p>
                         <div className="mt-4 flex justify-end gap-2">
                             <button
-                                className="px-3 py-1.5д rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200"
+                                className="px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200"
                                 onClick={() => { setConfirmOpen(false); window.dispatchEvent(new CustomEvent('scan-confirm', { detail: false })); }}
                             >
                                 Отмена

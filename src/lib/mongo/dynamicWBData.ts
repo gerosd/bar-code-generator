@@ -1,6 +1,6 @@
 import type {Collection, Filter} from 'mongodb'
-import type {DynamicWBDataDocument} from '../types/dynamicWBData'
-import {ProductDatabaseView} from '../types/product'
+import type {DynamicWBDataDocument} from '@/lib/types/dynamicWBData'
+import {ProductDatabaseView} from '@/lib/types/product'
 import {getCollection} from './client'
 import {executeMongoOperation} from './utils'
 
@@ -200,5 +200,6 @@ export const getAllProductsAdminView = async (): Promise<ProductDatabaseView[]> 
         photoTmUrl: doc.photos?.thumbnail,
         photoC516x688Url: doc.photos?.medium,
         cardUpdatedAt: doc.cardUpdatedAt,
+        sizes: doc.sizes || [], // Добавляем информацию о размерах
     }))
 }

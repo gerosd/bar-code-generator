@@ -10,7 +10,7 @@ const PRINTER_PORT = 9100;
 export async function POST(request: NextRequest) {
     try {
         const body: PrintData = await request.json();
-        const {scannedData, productName, productSize, nmId, vendorCode, dataMatrixCount, ean13Count} = body;
+        const {scannedData, productName, productSize, nmId, vendorCode, dataMatrixCount, ean13Count, diffEAN13} = body;
 
         if (!scannedData) {
             return NextResponse.json(
@@ -27,7 +27,18 @@ export async function POST(request: NextRequest) {
 
         // Формируем итоговую ZPL-команду: одна TCP-сессия на все задания
         let zplPayload = '';
-        if (isScannedEAN13) {
+
+        if (diffEAN13) {
+            const count = Math.max(1, Number(ean13Count ?? 1));
+            const single = `^XA
+                ^FO55,20^BY4
+                ^BEN,240,Y,N
+                ^FD${diffEAN13}^FS
+                ^XZ`;
+            zplPayload += single.repeat(count);
+        }
+
+        if (isScannedEAN13 && !diffEAN13) {
             // Печать только EAN-13
             const count = Math.max(1, Number(ean13Count ?? 1));
             const single = `^XA
@@ -49,12 +60,12 @@ export async function POST(request: NextRequest) {
                 ^FO10,165^FD${vendorCode}^FS
                 ^FO10,220^FDРазмер: ${productSize}^FS
                 ^XZ`;
-            zplPayload = dataMatrixSingle.repeat(dmCount);
+            zplPayload += dataMatrixSingle.repeat(dmCount);
 
             // Проверка на EAN-13 в DataMatrix — при наличии добавляем вторую этикетку
             const barcodeCandidate = scannedData.slice(3, 16);
-            if (/^\d{13}$/.test(barcodeCandidate)) {
-                const eanCount = Math.max(1, Number(ean13Count ?? 1));
+            if (/^\d{13}$/.test(barcodeCandidate) && !diffEAN13) {
+                const eanCount = Math.max(0, Number(ean13Count ?? 0));
                 const ean13ZPL = `^XA
                     ^FO55,20^BY4
                     ^BEN,240,Y,N

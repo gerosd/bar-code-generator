@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
     return (
         <div className={sidebarBaseClasses}>
             <div className='flex items-center justify-between h-16 border-b border-gray-200 dark:border-gray-700 px-4'>
-                <span className='text-xl font-bold text-blue-600'>BarMatrix</span>
+                <Link href="/" className='text-xl font-bold text-blue-600 cursor-pointer'>BarMatrix</Link>
                 {isInsideDrawer && (
                     <button
                         onClick={closeDrawer}
