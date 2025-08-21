@@ -79,3 +79,19 @@ export async function findRecentScans(limit = 50): Promise<WithId<ScanHistoryDoc
     );
 }
 
+export async function findRecentScansWithPagination(limit = 50, offset = 0): Promise<WithId<ScanHistoryDoc>[]> {
+    const collection = await getScanHistoryCollection();
+    return executeMongoOperation(
+        () => collection.find({} as Filter<ScanHistoryDoc>).sort({ scannedAt: -1 }).skip(offset).limit(limit).toArray(),
+        'получении сканов с пагинацией'
+    );
+}
+
+export async function getTotalScansCount(): Promise<number> {
+    const collection = await getScanHistoryCollection();
+    return executeMongoOperation(
+        () => collection.countDocuments({} as Filter<ScanHistoryDoc>),
+        'получении общего количества сканов'
+    );
+}
+

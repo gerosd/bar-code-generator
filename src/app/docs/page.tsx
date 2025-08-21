@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { FaQrcode, FaUsers, FaStore, FaCog, FaDownload, FaUserCog } from 'react-icons/fa'
+import DocsBackButton from "@/components/docs/DocsBackButton";
 
 export const metadata: Metadata = {
     title: 'Документация | BarMatrix',
@@ -17,6 +18,8 @@ const DocsPage = () => {
                     Полное руководство по использованию системы генерации штрих-кодов DataMatrix
                 </p>
             </div>
+
+            <DocsBackButton />
 
             <div className="grid gap-8">
                 {/* Основные функции */}

@@ -15,7 +15,7 @@ export default function GeneratePage() {
                     <div className="mb-3">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white">Генерация этикеток</h2>
                         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            Выберите режим работы: автоматическое сканирование или ручной выбор товара с последующим сканированием
+                            Выберите режим работы: автоматическое сканирование или ручной выбор товара с последующим сканированием. Символы <span className="text-gray-300 text-base">100110</span> в начале строки - служебные и не учитываются при печати
                         </p>
                     </div>
                     <CreateDuplicateWindow />

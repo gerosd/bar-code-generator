@@ -182,7 +182,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({initialFullName, initialEmail,
                                 type='button'
                                 disabled={isPendingPwd}
                                 onClick={() => handlePasswordChange}
-                                className='inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-gray-900 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700 cursor-pointer'
+                                className='inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer'
                             >
                                 {isPendingPwd ? 'Обновление...' : 'Обновить пароль'}
                             </button>

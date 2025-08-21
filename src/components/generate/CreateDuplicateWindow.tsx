@@ -9,8 +9,6 @@ export default function CreateDuplicateWindow() {
     const [loading, setLoading] = useState(false);
     const [dataMatrixCount, setDataMatrixCount] = useState<number>(1);
     const [ean13Count, setEan13Count] = useState<number>(1);
-    const dataMatrixCountRef = useRef<HTMLInputElement>(null);
-    const ean13CountRef = useRef<HTMLInputElement>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const dupInfoRef = useRef<{ code: string; count: number } | null>(null);
 
@@ -29,25 +27,70 @@ export default function CreateDuplicateWindow() {
     const [productInputData, setProductInputData] = useState<string>('');
     const productInputRef = useRef<HTMLInputElement>(null);
 
+    // Состояние для отслеживания последовательных нажатий клавиш
+    const keySequenceRef = useRef<string>('');
+    const keyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
-        const handleBlur = () => {
-            const active = document.activeElement as HTMLElement | null;
-            const isEditingCounts = active === dataMatrixCountRef.current || active === ean13CountRef.current;
-            if (!isEditingCounts && inputRef.current) {
-                inputRef.current.focus();
+        // Обработчик глобальных нажатий клавиш для определения сканера DataMatrix
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            // Сбрасываем последовательность при нажатии других клавиш
+            if (e.key !== '1' && e.key !== '0') {
+                keySequenceRef.current = '';
+                if (keyTimeoutRef.current) {
+                    clearTimeout(keyTimeoutRef.current);
+                    keyTimeoutRef.current = null;
+                }
+                return;
+            }
+
+            // Добавляем символ к последовательности
+            keySequenceRef.current += e.key;
+
+            // Очищаем предыдущий таймаут
+            if (keyTimeoutRef.current) {
+                clearTimeout(keyTimeoutRef.current);
+            }
+
+            // Устанавливаем таймаут для сброса последовательности
+            keyTimeoutRef.current = setTimeout(() => {
+                keySequenceRef.current = '';
+            }, 1000); // 1 секунда на ввод последовательности
+
+            // Проверяем, если последовательность равна '100110'
+            if (keySequenceRef.current === '100110') {
+                // Предотвращаем попадание символов последовательности в поля ввода
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Фокусируемся на соответствующем поле ввода в зависимости от активной вкладки
+                if (activeTab === 'scan' && inputRef.current) {
+                    inputRef.current.focus();
+                } else if (activeTab === 'product' && productInputRef.current) {
+                    productInputRef.current.focus();
+                }
+                
+                // Сбрасываем последовательность
+                keySequenceRef.current = '';
+                if (keyTimeoutRef.current) {
+                    clearTimeout(keyTimeoutRef.current);
+                    keyTimeoutRef.current = null;
+                }
             }
         };
-        const input = inputRef.current;
-        if (input) {
-            input.addEventListener('blur', handleBlur);
-            input.focus();
-        }
+
+        // Добавляем глобальные обработчики
+        document.addEventListener('keydown', handleGlobalKeyDown);
+        document.addEventListener('input', handleInput);
+
         return () => {
-            if (input) {
-                input.removeEventListener('blur', handleBlur);
+            document.removeEventListener('keydown', handleGlobalKeyDown);
+            document.removeEventListener('input', handleInput);
+            if (keyTimeoutRef.current) {
+                clearTimeout(keyTimeoutRef.current);
             }
-        }
-    }, []);
+        };
+    }, [activeTab]);
 
     // Загрузка списка товаров
     useEffect(() => {
@@ -55,38 +98,6 @@ export default function CreateDuplicateWindow() {
             loadProducts();
         }
     }, [activeTab, products.length]);
-
-    // Управление фокусом для поля ввода товара
-    useEffect(() => {
-        if (activeTab === 'product' && productInputRef.current) {
-            const handleBlur = () => {
-                // Небольшая задержка, чтобы не блокировать клики по товарам
-                setTimeout(() => {
-                    const activeElement = document.activeElement as HTMLElement | null;
-
-                    // Проверяем, что активный элемент не является полем поиска или другими важными элементами
-                    if (productInputRef.current &&
-                        activeElement !== productInputRef.current &&
-                        activeElement?.id !== 'productSearch' &&
-                        activeElement?.tagName !== 'BUTTON' &&
-                        !activeElement?.closest('button') &&
-                        !activeElement?.closest('input') &&
-                        !activeElement?.closest('select') &&
-                        !activeElement?.closest('textarea')) {
-                        productInputRef.current.focus();
-                    }
-                }, 100);
-            };
-
-            const input = productInputRef.current;
-            input.addEventListener('blur', handleBlur);
-            input.focus();
-
-            return () => {
-                input.removeEventListener('blur', handleBlur);
-            };
-        }
-    }, [activeTab]);
 
     const loadProducts = async () => {
         setProductsLoading(true);
@@ -162,9 +173,41 @@ export default function CreateDuplicateWindow() {
         setProductInputData(engText);
     }
 
-	const handleEnterPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Обработчик для перехвата входящих данных от сканера
+    // Автоматически фокусирует поле ввода и вставляет данные при получении строки, начинающейся с '10011'
+    const handleInput = (e: Event) => {
+        // Проверяем, что событие произошло в поле ввода
+        const target = e.target as HTMLInputElement;
+        if (target && (target.id === 'dataMatrixCopy' || target.id === 'productDataMatrixInput')) {
+            const value = target.value;
+            
+            // Если значение начинается с '10011', значит это данные от сканера
+            if (value.startsWith('10011')) {
+                // Убираем префикс '10011' и устанавливаем значение
+                let cleanValue = value.substring(5);
+                
+                // Дополнительная проверка: если в начале строки есть префикс '10011', убираем его
+                if (cleanValue.startsWith('10011')) {
+                    cleanValue = cleanValue.substring(5);
+                }
+                
+                if (target.id === 'dataMatrixCopy') {
+                    setScannedData(cleanValue);
+                } else if (target.id === 'productDataMatrixInput') {
+                    setProductInputData(cleanValue);
+                }
+                
+                // Фокусируемся на поле ввода
+                target.focus();
+                // Выделяем весь текст для удобства замены
+                target.select();
+            }
+        }
+    };
+
+    const handleEnterPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            const dataMatrix = scannedData.trim();
+            const dataMatrix = scannedData.trim().startsWith('10011') ? scannedData.trim().substring(5) : scannedData.trim();
             if (!dataMatrix || dataMatrix.length <= 12) { // От 13 минимум
                 setScannedData('');
                 return;
@@ -236,7 +279,7 @@ export default function CreateDuplicateWindow() {
     // Обработка Enter для поля ввода товара
     const handleProductInputEnter = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && selectedProduct) {
-            const dataMatrix = productInputData.trim();
+            const dataMatrix = productInputData.trim().startsWith('10011') ? productInputData.trim().substring(5) : productInputData.trim();
             if (!dataMatrix || dataMatrix.length <= 12 || !selectedSize) {
                 setProductInputData('');
                 return;
@@ -298,6 +341,9 @@ export default function CreateDuplicateWindow() {
             {activeTab === 'scan' && (
                 <div>
                     <label htmlFor="dataMatrixCopy" className="w-full block">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">
+                            Введите DataMatrix код для печати (автоматический фокус при сканировании)
+                        </span>
                         <input
                             className="w-full text-xl outline-2 rounded-lg outline-blue-600 px-2 py-1"
                             onKeyDown={handleEnterPress}
@@ -305,9 +351,9 @@ export default function CreateDuplicateWindow() {
                             id="dataMatrixCopy"
                             value={scannedData}
                             onChange={handleInputChange}
-                            autoFocus
                             ref={inputRef}
                             autoComplete="off"
+                            placeholder="Введите DataMatrix код..."
                         />
                     </label>
                 </div>
@@ -320,7 +366,7 @@ export default function CreateDuplicateWindow() {
                     <div>
                         <label htmlFor="productDataMatrixInput" className="w-full block">
                             <span className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">
-                                Введите DataMatrix код для печати
+                                Введите DataMatrix код для печати (автоматический фокус при сканировании)
                             </span>
                             <input
                                 className="w-full text-xl outline-2 rounded-lg outline-blue-600 px-2 py-1"
@@ -331,7 +377,7 @@ export default function CreateDuplicateWindow() {
                                 onChange={handleProductInputChange}
                                 ref={productInputRef}
                                 autoComplete="off"
-                                placeholder="Отсканируйте или введите код..."
+                                placeholder="Введите DataMatrix код..."
                             />
                         </label>
                     </div>
@@ -348,20 +394,7 @@ export default function CreateDuplicateWindow() {
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-900 dark:text-white"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={() => {
-                                // При фокусе на поле поиска временно отключаем автофокус
-                                if (productInputRef.current) {
-                                    productInputRef.current.removeEventListener('blur', productInputRef.current.onblur as any);
-                                }
-                            }}
-                            onBlur={() => {
-                                // При потере фокуса восстанавливаем автофокус
-                                setTimeout(() => {
-                                    if (productInputRef.current && document.activeElement !== productInputRef.current) {
-                                        productInputRef.current.focus();
-                                    }
-                                }, 200);
-                            }}
+
                         />
                     </div>
 
@@ -387,15 +420,6 @@ export default function CreateDuplicateWindow() {
                                         onClick={() => {
                                             setSelectedProduct(product);
                                             setSelectedSize(null); // Сбрасываем выбранный размер при смене товара.
-                                            // При выборе товара временно отключаем автофокус
-                                            if (productInputRef.current) {
-                                                const currentBlurHandler = productInputRef.current.onblur;
-                                                setTimeout(() => {
-                                                    if (productInputRef.current && currentBlurHandler) {
-                                                        productInputRef.current.addEventListener('blur', currentBlurHandler as any);
-                                                    }
-                                                }, 300);
-                                            }
                                         }}
                                     >
                                         <div className="flex items-start space-x-3">
@@ -448,16 +472,7 @@ export default function CreateDuplicateWindow() {
                                             <button
                                                 key={size.chrtId}
                                                 onClick={() => setSelectedSize(size)}
-                                                onBlur={() => {
-                                                    // При потере фокуса восстанавливаем автофокус
-                                                    if (activeTab === 'product') {
-                                                        setTimeout(() => {
-                                                            if (productInputRef.current && document.activeElement !== productInputRef.current) {
-                                                                productInputRef.current.focus();
-                                                            }
-                                                        }, 200);
-                                                    }
-                                                }}
+
                                                 className={`p-2 text-xs rounded border transition-colors ${
                                                     selectedSize?.chrtId === size.chrtId
                                                         ? 'bg-blue-600 text-white border-blue-600'
@@ -492,62 +507,114 @@ export default function CreateDuplicateWindow() {
 
             {/* Общие настройки количества */}
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="block">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Количество DataMatrix</span>
-                    <input
-                        type="number"
-                        min={1}
-                        className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-gray-900 dark:text-white"
-                        value={dataMatrixCount}
-                        onChange={(e) => setDataMatrixCount(Math.max(1, Number(e.target.value) || 1))}
-                        ref={dataMatrixCountRef}
-                        disabled={loading}
-                        onFocus={() => {
-                            // При фокусе на поле количества временно отключаем автофокус
-                            if (productInputRef.current && activeTab === 'product') {
-                                productInputRef.current.removeEventListener('blur', productInputRef.current.onblur as any);
-                            }
-                        }}
-                        onBlur={() => {
-                            // При потере фокуса восстанавливаем автофокус
-                            if (activeTab === 'product') {
-                                setTimeout(() => {
-                                    if (productInputRef.current && document.activeElement !== productInputRef.current) {
-                                        productInputRef.current.focus();
-                                    }
-                                }, 200);
-                            }
-                        }}
-                    />
-                </label>
-                <label className="block">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Количество штрихкодов (EAN‑13)</span>
-                    <input
-                        type="number"
-                        min={1}
-                        className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-gray-900 dark:text-white"
-                        value={ean13Count}
-                        onChange={(e) => setEan13Count(Math.max(1, Number(e.target.value) || 1))}
-                        ref={ean13CountRef}
-                        disabled={loading}
-                        onFocus={() => {
-                            // При фокусе на поле количества временно отключаем автофокус
-                            if (productInputRef.current && activeTab === 'product') {
-                                productInputRef.current.removeEventListener('blur', productInputRef.current.onblur as any);
-                            }
-                        }}
-                        onBlur={() => {
-                            // При потере фокуса восстанавливаем автофокус
-                            if (activeTab === 'product') {
-                                setTimeout(() => {
-                                    if (productInputRef.current && document.activeElement !== productInputRef.current) {
-                                        productInputRef.current.focus();
-                                    }
-                                }, 200);
-                            }
-                        }}
-                    />
-                </label>
+                <div className="block">
+                    <span className="text-base text-gray-700 dark:text-gray-300 mb-2 block">Количество DataMatrix</span>
+                    <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev + 10))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                +10
+                            </button>
+                            <button
+                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev + 5))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                +5
+                            </button>
+                            <button
+                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev + 1))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                +1
+                            </button>
+                        </div>
+                        <div className="text-lg font-semibold text-gray-900 dark:text-white min-w-[3rem] text-center">
+                            {dataMatrixCount}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev - 1))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                -1
+                            </button>
+                            <button
+                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev - 5))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                -5
+                            </button>
+                            <button
+                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev - 10))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                -10
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div className="block">
+                    <span className="text-base text-gray-700 dark:text-gray-300 mb-2 block">Количество штрихкодов (EAN‑13)</span>
+                    <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setEan13Count(prev => Math.max(1, prev + 10))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                +10
+                            </button>
+                            <button
+                                onClick={() => setEan13Count(prev => Math.max(1, prev + 5))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                +5
+                            </button>
+                            <button
+                                onClick={() => setEan13Count(prev => Math.max(1, prev + 1))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                +1
+                            </button>
+                        </div>
+                        <div className="text-lg font-semibold text-gray-900 dark:text-white min-w-[3rem] text-center">
+                            {ean13Count}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setEan13Count(prev => Math.max(1, prev - 1))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                -1
+                            </button>
+                            <button
+                                onClick={() => setEan13Count(prev => Math.max(1, prev - 5))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                -5
+                            </button>
+                            <button
+                                onClick={() => setEan13Count(prev => Math.max(1, prev - 10))}
+                                disabled={loading}
+                                className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                -10
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             {loading && (
                 <div className="mt-3 flex items-center text-sm text-gray-700 dark:text-gray-300" role="status" aria-live="polite">

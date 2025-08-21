@@ -156,22 +156,6 @@ export async function validateApiKey(_this: WildberriesAPIBase): Promise<Validat
 			}
 		}
 
-		if (!decodedToken.hasContentAccess) {
-			return {
-				valid: false,
-				message: 'API-ключ не имеет доступа к категории "Контент"',
-				debugInfo: _this.debugInfo,
-			}
-		}
-
-		if (decodedToken.isReadOnly) {
-			return {
-				valid: false,
-				message: 'API-ключ имеет только права на чтения, необходим ключ с правами на запись',
-				debugInfo: _this.debugInfo,
-			}
-		}
-
 		const connectionResult = await checkConnection(_this)
 
 		if (!connectionResult.isConnected) {

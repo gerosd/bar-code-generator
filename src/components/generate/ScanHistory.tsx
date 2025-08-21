@@ -11,26 +11,51 @@ type Item = {
 export default function ScanHistory() {
     const [items, setItems] = useState<Item[]>([])
     const [loading, setLoading] = useState(false)
+    const [loadingMore, setLoadingMore] = useState(false)
     const [printingCode, setPrintingCode] = useState<string | null>(null)
+    const [hasMore, setHasMore] = useState(false)
+    const [currentOffset, setCurrentOffset] = useState(0)
+    const [totalCount, setTotalCount] = useState(0)
 
-    const load = async () => {
-        setLoading(true)
+    const load = async (reset = false) => {
+        if (reset) {
+            setLoading(true)
+            setCurrentOffset(0)
+        } else {
+            setLoadingMore(true)
+        }
+        
         try {
-            const res = await fetch('/api/scans?limit=50')
+            const offset = reset ? 0 : currentOffset
+            const res = await fetch(`/api/scans?limit=50&offset=${offset}`)
             const json = await res.json()
             if (json.success && Array.isArray(json.items)) {
-                setItems(json.items)
+                if (reset) {
+                    setItems(json.items)
+                } else {
+                    setItems(prev => [...prev, ...json.items])
+                }
+                setHasMore(json.hasMore)
+                setCurrentOffset(json.currentOffset + json.currentLimit)
+                setTotalCount(json.totalCount)
             }
         } catch (e) {
             // ignore
         } finally {
             setLoading(false)
+            setLoadingMore(false)
+        }
+    }
+
+    const loadMore = () => {
+        if (!loadingMore && hasMore) {
+            load(false)
         }
     }
 
     useEffect(() => {
-        load();
-        const id = setInterval(load, 10000)
+        load(true);
+        const id = setInterval(() => load(true), 10000)
         return () => clearInterval(id)
     }, [])
 
@@ -44,6 +69,9 @@ export default function ScanHistory() {
 
     return (
         <div className="mt-3">
+            <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+                Показано {items.length} из {totalCount} записей
+            </div>
             <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                 {items.map((it, idx) => (
                     <li key={idx} className="py-2">
@@ -107,6 +135,18 @@ export default function ScanHistory() {
                     </li>
                 ))}
             </ul>
+            
+            {hasMore && (
+                <div className="mt-4 text-center">
+                    <button
+                        onClick={loadMore}
+                        disabled={loadingMore}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loadingMore ? 'Загрузка…' : 'Загрузить еще'}
+                    </button>
+                </div>
+            )}
         </div>
     )
 }

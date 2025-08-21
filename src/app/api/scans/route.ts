@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { findRecentScans } from '@/lib/mongo/scanHistory'
+import { findRecentScansWithPagination, getTotalScansCount } from '@/lib/mongo/scanHistory'
 
 export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const limitParam = url.searchParams.get('limit')
+    const offsetParam = url.searchParams.get('offset')
     const limit = Math.min(200, Math.max(1, Number(limitParam ?? 50) || 50))
+    const offset = Math.max(0, Number(offsetParam ?? 0) || 0)
+    
     try {
-        const items = await findRecentScans(limit)
+        const [items, totalCount] = await Promise.all([
+            findRecentScansWithPagination(limit, offset),
+            getTotalScansCount()
+        ])
         
         // Безопасно обрабатываем каждый элемент
         const safeItems = items.map(i => {
@@ -29,7 +35,11 @@ export async function GET(request: NextRequest) {
         
         return NextResponse.json({ 
             success: true, 
-            items: safeItems
+            items: safeItems,
+            totalCount,
+            hasMore: offset + limit < totalCount,
+            currentOffset: offset,
+            currentLimit: limit
         })
     } catch (error) {
         console.error('Error in scans API:', error)

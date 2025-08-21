@@ -10,7 +10,8 @@ const PRINTER_PORT = 9100;
 export async function POST(request: NextRequest) {
     try {
         const body: PrintData = await request.json();
-        const {scannedData, productName, productSize, nmId, vendorCode, dataMatrixCount, ean13Count, diffEAN13} = body;
+        let {scannedData} = body;
+        const {productName, productSize, nmId, vendorCode, dataMatrixCount, ean13Count, diffEAN13} = body;
 
         if (!scannedData) {
             return NextResponse.json(
