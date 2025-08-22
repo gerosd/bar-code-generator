@@ -3,6 +3,7 @@ import { logger } from '@/utils/logger'
 import { ObjectId } from 'mongodb'
 import { getDb } from './client'
 import { executeMongoOperation } from './utils'
+import type { PrintTemplate } from '@/lib/types/client'
 
 const COLLECTION_NAME = 'clients'
 
@@ -42,6 +43,7 @@ function documentToClient(doc: ClientDocument): ClientType {
 		id: doc._id.toString(),
 		name: doc.name,
 		members: doc.members,
+		selectedPrintTemplate: doc.selectedPrintTemplate || 'template1',
 		createdAt: doc.createdAt,
 		updatedAt: doc.updatedAt,
 	}
@@ -72,6 +74,7 @@ export async function createClient(name: string, adminUserId: string): Promise<C
 					invitedAt: new Date(),
 				},
 			],
+			selectedPrintTemplate: 'template1',
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		}
@@ -103,7 +106,21 @@ export async function getClientById(clientId: string): Promise<ClientType | null
 		const collection = await getClientsCollection()
 		const doc = await collection.findOne({ _id: new ObjectId(clientId) })
 
-		return doc ? documentToClient(doc) : null
+		if (!doc) return null
+
+		// Автоматически обновляем клиента, если у него нет поля selectedPrintTemplate
+		if (!doc.selectedPrintTemplate) {
+			await collection.updateOne(
+				{ _id: doc._id },
+				{ $set: { selectedPrintTemplate: 'template1' } }
+			)
+			doc.selectedPrintTemplate = 'template1'
+			logger.database('Автоматически добавлен шаблон по умолчанию для клиента', { 
+				metadata: { clientId: clientId, template: 'template1' } 
+			})
+		}
+
+		return documentToClient(doc)
 	} catch (error) {
 		logger.error('Ошибка получения клиента:', { metadata: { error } })
 		throw error
@@ -118,7 +135,24 @@ export async function getClientsByUserId(userId: string): Promise<ClientType[]> 
 		const collection = await getClientsCollection()
 		const docs = await collection.find({ 'members.userId': userId }).toArray()
 
-		return docs.map(documentToClient)
+		// Автоматически обновляем клиентов, у которых нет поля selectedPrintTemplate
+		const updatedDocs = await Promise.all(
+			docs.map(async (doc) => {
+				if (!doc.selectedPrintTemplate) {
+					await collection.updateOne(
+						{ _id: doc._id },
+						{ $set: { selectedPrintTemplate: 'template1' } }
+					)
+					doc.selectedPrintTemplate = 'template1'
+					logger.database('Автоматически добавлен шаблон по умолчанию для клиента', { 
+						metadata: { clientId: doc._id.toString(), template: 'template1' } 
+					})
+				}
+				return doc
+			})
+		)
+
+		return updatedDocs.map(documentToClient)
 	} catch (error) {
 		logger.error('Ошибка получения клиентов пользователя:', { metadata: { error } })
 		throw error
@@ -294,6 +328,40 @@ export async function updateClientNameMongo(clientId: string, newName: string): 
 }
 
 /**
+ * Обновить выбранный шаблон печати клиента
+ * @param clientId ID клиента
+ * @param template Выбранный шаблон
+ * @returns true, если шаблон был обновлен, иначе false
+ */
+export async function updateClientPrintTemplate(clientId: string, template: PrintTemplate): Promise<boolean> {
+	try {
+		const collection = await getClientsCollection()
+		const result = await collection.updateOne(
+			{ _id: new ObjectId(clientId) },
+			{
+				$set: {
+					selectedPrintTemplate: template,
+					updatedAt: new Date(),
+				},
+			}
+		)
+
+		if (result.modifiedCount > 0) {
+			logger.database('Шаблон печати клиента обновлен', { metadata: { clientId, template } })
+			return true
+		}
+
+		logger.warn('Шаблон печати клиента не был обновлен (клиент не найден или шаблон не изменился)', {
+			metadata: { clientId, template },
+		})
+		return false
+	} catch (error) {
+		logger.error('Ошибка обновления шаблона печати клиента:', { metadata: { clientId, template, error } })
+		throw error
+	}
+}
+
+/**
  * Получить роль пользователя в клиенте
  */
 export async function getMemberRole(clientId: string, userId: string): Promise<ClientMemberRole | null> {
@@ -322,7 +390,25 @@ export async function getAllClientsAdmin(): Promise<ClientType[]> {
 	try {
 		const collection = await getClientsCollection()
 		const docs = await collection.find({}).toArray()
-		return docs.map(documentToClient)
+
+		// Автоматически обновляем клиентов, у которых нет поля selectedPrintTemplate
+		const updatedDocs = await Promise.all(
+			docs.map(async (doc) => {
+				if (!doc.selectedPrintTemplate) {
+					await collection.updateOne(
+						{ _id: doc._id },
+						{ $set: { selectedPrintTemplate: 'template1' } }
+					)
+					doc.selectedPrintTemplate = 'template1'
+					logger.database('Автоматически добавлен шаблон по умолчанию для клиента', { 
+						metadata: { clientId: doc._id.toString(), template: 'template1' } 
+					})
+				}
+				return doc
+			})
+		)
+
+		return updatedDocs.map(documentToClient)
 	} catch (error) {
 		logger.error('Ошибка получения всех клиентов для админки:', { metadata: { error } })
 		throw error

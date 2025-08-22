@@ -1,3 +1,5 @@
+import type { PrintTemplate } from './client'
+
 export interface DataMatrixOptions {
     scale?: number;
     includetext?: boolean;
@@ -16,4 +18,5 @@ export type PrintData = {
     dataMatrixCount?: number; // Количество этикеток DataMatrix для печати
     ean13Count?: number; // Количество этикеток EAN-13 для печати
     diffEAN13?: string; // Штрихкод для печати на отдельной этикетке
+    selectedTemplate?: PrintTemplate; // Выбранный шаблон для печати
 }

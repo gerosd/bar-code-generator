@@ -1,16 +1,69 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {findProductByBarcode} from '@/lib/mongo/dynamicWBData';
 import {findScanByCode, recordScan} from '@/lib/mongo/scanHistory';
+import {getClientById} from '@/lib/mongo/clients';
 import net from 'net';
 import {PrintData} from "@/lib/types/generation";
 
 const PRINTER_IP = '10.222.10.86';
 const PRINTER_PORT = 9100;
 
+// Функция для получения ZPL кода по шаблону
+function getZPLByTemplate(template: string, data: any): string {
+    switch (template) {
+        case 'template1':
+            // Шаблон 1 - стандартный
+            return `^XA
+                ^CI28
+                ^CF0,24
+                ^FO10,10^FD${data.productName}^FS
+                ^FO270,120^BXN,5,200^FD${data.scannedData}^FS
+                ^FO10,70^FDАртикул: ${data.nmId}^FS
+                ^FO10,130^FDАртикул продавца:^FS
+                ^FO10,165^FD${data.vendorCode}^FS
+                ^FO10,220^FDРазмер: ${data.productSize}^FS
+                ^XZ`;
+        case 'template2':
+            // Шаблон 2 - компактный
+            return `^XA
+                ^CI28
+                ^CF0,20
+                ^FO10,10^FD${data.productName}^FS
+                ^FO250,100^BXN,4,150^FD${data.scannedData}^FS
+                ^FO10,60^FD${data.nmId} | ${data.vendorCode}^FS
+                ^FO10,90^FDРазмер: ${data.productSize}^FS
+                ^XZ`;
+        case 'template3':
+            // Шаблон 3 - расширенный
+            return `^XA
+                ^CI28
+                ^CF0,28
+                ^FO10,10^FD${data.productName}^FS
+                ^FO280,130^BXN,6,220^FD${data.scannedData}^FS
+                ^FO10,70^FDАртикул ВБ: ${data.nmId}^FS
+                ^FO10,110^FDАртикул продавца: ${data.vendorCode}^FS
+                ^FO10,150^FDРазмер: ${data.productSize}^FS
+                ^FO10,190^FDДата: ${new Date().toLocaleDateString('ru-RU')}^FS
+                ^XZ`;
+        default:
+            // По умолчанию используем template1
+            return `^XA
+                ^CI28
+                ^CF0,24
+                ^FO10,10^FD${data.productName}^FS
+                ^FO270,120^BXN,5,200^FD${data.scannedData}^FS
+                ^FO10,70^FDАртикул: ${data.nmId}^FS
+                ^FO10,130^FDАртикул продавца:^FS
+                ^FO10,165^FD${data.vendorCode}^FS
+                ^FO10,220^FDРазмер: ${data.productSize}^FS
+                ^XZ`;
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body: PrintData = await request.json();
-        let {scannedData} = body;
+        let {scannedData, selectedTemplate} = body;
         const {productName, productSize, nmId, vendorCode, dataMatrixCount, ean13Count, diffEAN13} = body;
 
         if (!scannedData) {
@@ -18,6 +71,20 @@ export async function POST(request: NextRequest) {
                 {success: false, error: 'Отсутствуют данные для генерации'},
                 {status: 400}
             );
+        }
+
+        // Получаем текущий клиент из cookie для определения шаблона
+        const cookieStore = await import('next/headers').then(m => m.cookies());
+        const currentClientId = cookieStore.get('currentClientId')?.value;
+        
+        let templateToUse = selectedTemplate || 'template1'; // По умолчанию template1
+        
+        if (currentClientId && !selectedTemplate) {
+            // Если шаблон не указан, получаем из настроек клиента
+            const client = await getClientById(currentClientId);
+            if (client?.selectedPrintTemplate) {
+                templateToUse = client.selectedPrintTemplate;
+            }
         }
 
         const isScannedEAN13 = /^\d{13}$/.test(scannedData);
@@ -49,18 +116,15 @@ export async function POST(request: NextRequest) {
                 ^XZ`;
             zplPayload = single.repeat(count);
         } else {
-            // Печать DataMatrix
+            // Печать DataMatrix с выбранным шаблоном
             const dmCount = Math.max(1, Number(dataMatrixCount ?? 1));
-            const dataMatrixSingle = `^XA
-                ^CI28
-                ^CF0,24
-                ^FO10,10^FD${productName}^FS
-                ^FO270,120^BXN,5,200^FD${scannedData}^FS
-                ^FO10,70^FDАртикул: ${nmId}^FS
-                ^FO10,130^FDАртикул продавца:^FS
-                ^FO10,165^FD${vendorCode}^FS
-                ^FO10,220^FDРазмер: ${productSize}^FS
-                ^XZ`;
+            const dataMatrixSingle = getZPLByTemplate(templateToUse, {
+                productName,
+                scannedData,
+                nmId,
+                vendorCode,
+                productSize
+            });
             zplPayload += dataMatrixSingle.repeat(dmCount);
 
             // Проверка на EAN-13 в DataMatrix — при наличии добавляем вторую этикетку

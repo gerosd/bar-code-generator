@@ -4,6 +4,7 @@ import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers, FaUser, FaBook } from 'react-icons/fa'
+import {GoProjectTemplate} from "react-icons/go";
 
 interface SidebarProps {
     isAdmin: boolean
@@ -141,6 +142,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
 
                     {isAdmin && (
                         <>
+                            <li>
+                                <Link
+                                    href="/templates"
+                                    onClick={handleLinkClick}
+                                    className={`flex items-center p-3 text-base rounded-lg transition-colors ${
+                                        isActive('/templates')
+                                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                                        : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    }`}
+                                    >
+                                    <GoProjectTemplate className='w-5 h-5 mr-3' />
+                                    <span>Шаблоны этикеток</span>
+                                </Link>
+                            </li>
                             <li className='px-4 pt-4 pb-2'>
 								<span className='text-xs font-semibold text-gray-500 uppercase dark:text-gray-400'>
 									Администрирование

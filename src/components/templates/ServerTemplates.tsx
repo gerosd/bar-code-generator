@@ -1,0 +1,188 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useCurrentClient } from '@/components/providers/ClientProvider'
+import { updateClientPrintTemplateAction } from '@/lib/actions/client-actions'
+import type { PrintTemplate } from '@/lib/types/client'
+import preview1 from '@/public/label_1.webp';
+import preview2 from '@/public/label_1.webp';
+import preview3 from '@/public/label_1.webp';
+import {StaticImageData} from "next/image";
+import Image from 'next/image'
+
+interface TemplateOption {
+    id: PrintTemplate;
+    name: string;
+    description: string;
+    preview: string;
+    image: StaticImageData;
+}
+
+const TEMPLATE_OPTIONS: TemplateOption[] = [
+    {
+        id: 'template1',
+        name: 'Стандартный шаблон',
+        description: 'Классический макет с полной информацией о товаре',
+        preview: 'Стандартное расположение элементов с размером шрифта 24',
+        image: preview1
+    },
+    {
+        id: 'template2',
+        name: 'Компактный шаблон',
+        description: 'Уменьшенный макет для экономии места',
+        preview: 'Компактное расположение с размером шрифта 20',
+        image: preview2
+    },
+    {
+        id: 'template3',
+        name: 'Расширенный шаблон',
+        description: 'Расширенный макет с дополнительной информацией',
+        preview: 'Расширенная информация с датой печати, размер шрифта 28',
+        image: preview3
+    }
+]
+
+export default function ServerTemplates() {
+    const { currentClient } = useCurrentClient()
+    const [selectedTemplate, setSelectedTemplate] = useState<PrintTemplate>('template1')
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+    useEffect(() => {
+        if (currentClient?.selectedPrintTemplate) {
+            setSelectedTemplate(currentClient.selectedPrintTemplate)
+        }
+    }, [currentClient])
+
+    const handleTemplateChange = async (template: PrintTemplate) => {
+        if (!currentClient) return
+
+        setIsUpdating(true)
+        setMessage(null)
+
+        try {
+            const result = await updateClientPrintTemplateAction(currentClient.id, template)
+            
+            if (result.success) {
+                setSelectedTemplate(template)
+                setMessage({ type: 'success', text: result.message || 'Шаблон успешно обновлен' })
+            } else {
+                setMessage({ type: 'error', text: result.error || 'Ошибка при обновлении шаблона' })
+            }
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Произошла ошибка при обновлении шаблона' })
+        } finally {
+            setIsUpdating(false)
+        }
+    }
+
+    if (!currentClient) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-gray-500">Клиент не выбран</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold mb-4">Выбор шаблона для печати</h2>
+                <p className="text-gray-600 mb-6">
+                    Выберите один из трех доступных шаблонов для печати этикеток. 
+                    Выбранный шаблон будет автоматически использоваться при печати и сохранится в настройках клиента.
+                </p>
+
+                {message && (
+                    <div className={`mb-4 p-3 rounded-md ${
+                        message.type === 'success' 
+                            ? 'bg-green-50 text-green-800 border border-green-200' 
+                            : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
+                        {message.text}
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {TEMPLATE_OPTIONS.map((template) => (
+                        <div
+                            key={template.id}
+                            className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                                selectedTemplate === template.id
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => handleTemplateChange(template.id)}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-medium text-gray-900">{template.name}</h3>
+                                {selectedTemplate === template.id && (
+                                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <p className="text-sm text-gray-600 mb-3">{template.description}</p>
+                            
+                            <div className="bg-gray-100 p-3 rounded text-xs text-gray-700 font-mono">
+                                {template.preview}
+                            </div>
+
+                            <div className="mt-2 flex items-center justify-center h-44">
+                                <Image src={template.image} alt={template.name} className="w-auto h-full border-2 border-blue-600 rounded-lg" />
+                            </div>
+
+                            {isUpdating && selectedTemplate === template.id && (
+                                <div className="mt-3 flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                                    <span className="ml-2 text-sm text-gray-500">Обновление...</span>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-medium text-gray-900 mb-2">Текущий выбранный шаблон</h3>
+                    <p className="text-sm text-gray-600">
+                        <strong>Клиент:</strong> {currentClient.name}<br />
+                        <strong>Шаблон:</strong> {TEMPLATE_OPTIONS.find(t => t.id === selectedTemplate)?.name}<br />
+                        <strong>Статус:</strong> {isUpdating ? 'Обновление...' : 'Сохранен в базе данных'}
+                    </p>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold mb-4">Информация о шаблонах</h2>
+                <div className="space-y-4">
+                    <div>
+                        <h3 className="font-medium text-gray-900 mb-2">Как это работает</h3>
+                        <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                            <li>Выбранный шаблон автоматически сохраняется в настройках вашего клиента</li>
+                            <li>При печати этикеток система будет использовать выбранный шаблон</li>
+                            <li>Настройки сохраняются в базе данных MongoDB</li>
+                            <li>Каждый клиент может иметь свой собственный шаблон</li>
+                            <li><strong>Важно:</strong> Выбранный шаблон автоматически применяется при печати из раздела "Генерация этикеток"</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 className="font-medium text-gray-900 mb-2">ZPL коды шаблонов</h3>
+                        <p className="text-sm text-gray-600">
+                            ZPL коды для каждого шаблона уже настроены в системе. 
+                            При необходимости вы можете изменить их в файле API печати.
+                        </p>
+                        <div className="mt-3 p-3 bg-gray-100 rounded text-xs text-gray-700 font-mono">
+                            <strong>Шаблон 1 (Стандартный):</strong> Классический макет с размером шрифта 24<br/>
+                            <strong>Шаблон 2 (Компактный):</strong> Уменьшенный макет с размером шрифта 20<br/>
+                            <strong>Шаблон 3 (Расширенный):</strong> Расширенная информация с датой печати, размер шрифта 28
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

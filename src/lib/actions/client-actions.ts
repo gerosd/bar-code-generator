@@ -9,6 +9,7 @@ import {
 	removeMemberFromClient,
 	updateClientNameMongo,
 	updateMemberRole,
+	updateClientPrintTemplate,
 } from '@/lib/mongo/clients'
 import type { ClientMemberRole } from '@/lib/types/client'
 import { logger } from '@/utils/logger'
@@ -16,6 +17,7 @@ import { getServerSession } from 'next-auth'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { getCurrentClientId } from './utils'
+import type { PrintTemplate } from '@/lib/types/client'
 
 /**
  * Создает нового клиента
@@ -479,5 +481,32 @@ export const isCurrentUserClientAdminAction = async (): Promise<boolean> => {
 			metadata: { error },
 		})
 		return false
+	}
+}
+
+/**
+ * Обновить выбранный шаблон печати клиента
+ */
+export async function updateClientPrintTemplateAction(clientId: string, template: PrintTemplate) {
+	try {
+		const result = await updateClientPrintTemplate(clientId, template)
+		
+		if (result) {
+			return {
+				success: true,
+				message: 'Шаблон печати успешно обновлен'
+			}
+		} else {
+			return {
+				success: false,
+				error: 'Не удалось обновить шаблон печати'
+			}
+		}
+	} catch (error) {
+		logger.error('Ошибка обновления шаблона печати:', { metadata: { error, clientId, template } })
+		return {
+			success: false,
+			error: 'Внутренняя ошибка сервера при обновлении шаблона печати'
+		}
 	}
 }

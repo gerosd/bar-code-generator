@@ -2,8 +2,10 @@
 
 import React, {useState, useEffect, useRef, useCallback} from 'react';
 import type { ProductDatabaseView } from '@/lib/types/product';
+import { useCurrentClient } from '@/components/providers/ClientProvider';
 
 export default function CreateDuplicateWindow() {
+    const { currentClient } = useCurrentClient();
     const [scannedData, setScannedData] = useState<string>('');
     const inputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
@@ -34,6 +36,11 @@ export default function CreateDuplicateWindow() {
     useEffect(() => {
         // Обработчик глобальных нажатий клавиш для определения сканера DataMatrix
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            // Если открыто модальное окно, не обрабатываем глобальные события
+            if (confirmOpen) {
+                return;
+            }
+            
             // Сбрасываем последовательность при нажатии других клавиш
             if (e.key !== '1' && e.key !== '0') {
                 keySequenceRef.current = '';
@@ -90,7 +97,7 @@ export default function CreateDuplicateWindow() {
                 clearTimeout(keyTimeoutRef.current);
             }
         };
-    }, [activeTab]);
+    }, [activeTab, confirmOpen]);
 
     // Загрузка списка товаров
     useEffect(() => {
@@ -98,6 +105,20 @@ export default function CreateDuplicateWindow() {
             loadProducts();
         }
     }, [activeTab, products.length]);
+
+    // Автоматический фокус на модальном окне при открытии
+    useEffect(() => {
+        if (confirmOpen) {
+            // Небольшая задержка для корректного рендеринга
+            const timer = setTimeout(() => {
+                const modalElement = document.querySelector('[data-modal="confirm"]');
+                if (modalElement instanceof HTMLElement) {
+                    modalElement.focus();
+                }
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [confirmOpen]);
 
     const loadProducts = async () => {
         setProductsLoading(true);
@@ -141,10 +162,16 @@ export default function CreateDuplicateWindow() {
 
 	const directPrint = async (payload: any) => {
         try {
+            // Добавляем выбранный шаблон из настроек клиента
+            const printPayload = {
+                ...payload,
+                selectedTemplate: currentClient?.selectedPrintTemplate || 'template1'
+            };
+
             const response = await fetch('/api/print', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(printPayload),
             });
             if (!response.ok) {
                 const errorData = await response.json();
@@ -161,6 +188,11 @@ export default function CreateDuplicateWindow() {
 
     // Замена русских букв на английские с учетом регистра
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Если открыто модальное окно, не обрабатываем изменения
+        if (confirmOpen) {
+            return;
+        }
+        
         const rusText = e.target.value;
         const engText = convertLayout(rusText);
         setScannedData(engText);
@@ -168,14 +200,24 @@ export default function CreateDuplicateWindow() {
 
     // Замена русских букв для поля ввода товара
     const handleProductInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Если открыто модальное окно, не обрабатываем изменения
+        if (confirmOpen) {
+            return;
+        }
+        
         const rusText = e.target.value;
         const engText = convertLayout(rusText);
         setProductInputData(engText);
     }
 
-    // Обработчик для перехвата входящих данных от сканера
+    // Обработчик для перехвата входящих данных от сканера.
     // Автоматически фокусирует поле ввода и вставляет данные при получении строки, начинающейся с '10011'
     const handleInput = (e: Event) => {
+        // Если открыто модальное окно, не обрабатываем события ввода
+        if (confirmOpen) {
+            return;
+        }
+        
         // Проверяем, что событие произошло в поле ввода
         const target = e.target as HTMLInputElement;
         if (target && (target.id === 'dataMatrixCopy' || target.id === 'productDataMatrixInput')) {
@@ -206,6 +248,11 @@ export default function CreateDuplicateWindow() {
     };
 
     const handleEnterPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Если открыто модальное окно, не обрабатываем события Enter
+        if (confirmOpen) {
+            return;
+        }
+        
         if (e.key === 'Enter') {
             const dataMatrix = scannedData.trim().startsWith('10011') ? scannedData.trim().substring(5) : scannedData.trim();
             if (!dataMatrix || dataMatrix.length <= 12) { // От 13 минимум
@@ -278,6 +325,11 @@ export default function CreateDuplicateWindow() {
 
     // Обработка Enter для поля ввода товара
     const handleProductInputEnter = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Если открыто модальное окно, не обрабатываем события Enter
+        if (confirmOpen) {
+            return;
+        }
+        
         if (e.key === 'Enter' && selectedProduct) {
             const dataMatrix = productInputData.trim().startsWith('10011') ? productInputData.trim().substring(5) : productInputData.trim();
             if (!dataMatrix || dataMatrix.length <= 12 || !selectedSize) {
@@ -309,28 +361,50 @@ export default function CreateDuplicateWindow() {
         }
     };
 
+    const handleConfirmAction = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter') {
+            setConfirmOpen(false);
+            window.dispatchEvent(new CustomEvent('scan-confirm', { detail: true }));
+        }
+
+        if (e.key === 'Escape') {
+            setConfirmOpen(false);
+            window.dispatchEvent(new CustomEvent('scan-confirm', { detail: false }));
+        }
+    }
+
 	return (
 		<div>
             {/* Вкладки */}
             <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
                 <nav className="-mb-px flex space-x-8">
                     <button
-                        onClick={() => setActiveTab('scan')}
+                        onClick={() => {
+                            if (!confirmOpen) {
+                                setActiveTab('scan');
+                            }
+                        }}
+                        disabled={confirmOpen}
                         className={`py-2 px-1 border-b-2 font-medium text-sm ${
                             activeTab === 'scan'
                                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                        }`}
+                        } ${confirmOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         Сканирование
                     </button>
                     <button
-                        onClick={() => setActiveTab('product')}
+                        onClick={() => {
+                            if (!confirmOpen) {
+                                setActiveTab('product');
+                            }
+                        }}
+                        disabled={confirmOpen}
                         className={`py-2 px-1 border-b-2 font-medium text-sm ${
                             activeTab === 'product'
                                 ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                        }`}
+                        } ${confirmOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         Выбор товара
                     </button>
@@ -393,8 +467,12 @@ export default function CreateDuplicateWindow() {
                             placeholder="Введите название, артикул, бренд или штрихкод..."
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-900 dark:text-white"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-
+                            onChange={(e) => {
+                                // Если открыто модальное окно, не обрабатываем изменения
+                                if (!confirmOpen) {
+                                    setSearchQuery(e.target.value);
+                                }
+                            }}
                         />
                     </div>
 
@@ -418,8 +496,11 @@ export default function CreateDuplicateWindow() {
                                             selectedProduct?.nmID === product.nmID ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' : ''
                                         }`}
                                         onClick={() => {
-                                            setSelectedProduct(product);
-                                            setSelectedSize(null); // Сбрасываем выбранный размер при смене товара.
+                                            // Если открыто модальное окно, не обрабатываем клики
+                                            if (!confirmOpen) {
+                                                setSelectedProduct(product);
+                                                setSelectedSize(null); // Сбрасываем выбранный размер при смене товара.
+                                            }
                                         }}
                                     >
                                         <div className="flex items-start space-x-3">
@@ -471,8 +552,12 @@ export default function CreateDuplicateWindow() {
                                         {selectedProduct.sizes.map((size) => (
                                             <button
                                                 key={size.chrtId}
-                                                onClick={() => setSelectedSize(size)}
-
+                                                onClick={() => {
+                                                    // Если открыто модальное окно, не обрабатываем клики
+                                                    if (!confirmOpen) {
+                                                        setSelectedSize(size);
+                                                    }
+                                                }}
                                                 className={`p-2 text-xs rounded border transition-colors ${
                                                     selectedSize?.chrtId === size.chrtId
                                                         ? 'bg-blue-600 text-white border-blue-600'
@@ -512,22 +597,34 @@ export default function CreateDuplicateWindow() {
                     <div className="flex items-center space-x-2">
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev + 10))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setDataMatrixCount(prev => Math.max(1, prev + 10));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 +10
                             </button>
                             <button
-                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev + 5))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setDataMatrixCount(prev => Math.max(1, prev + 5));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 +5
                             </button>
                             <button
-                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev + 1))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setDataMatrixCount(prev => Math.max(1, prev + 1));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 +1
@@ -538,22 +635,34 @@ export default function CreateDuplicateWindow() {
                         </div>
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev - 1))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setDataMatrixCount(prev => Math.max(1, prev - 1));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 -1
                             </button>
                             <button
-                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev - 5))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setDataMatrixCount(prev => Math.max(1, prev - 5));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 -5
                             </button>
                             <button
-                                onClick={() => setDataMatrixCount(prev => Math.max(1, prev - 10))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setDataMatrixCount(prev => Math.max(1, prev - 10));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 -10
@@ -566,22 +675,34 @@ export default function CreateDuplicateWindow() {
                     <div className="flex items-center space-x-2">
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => setEan13Count(prev => Math.max(1, prev + 10))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setEan13Count(prev => Math.max(1, prev + 10));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 +10
                             </button>
                             <button
-                                onClick={() => setEan13Count(prev => Math.max(1, prev + 5))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setEan13Count(prev => Math.max(1, prev + 5));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 +5
                             </button>
                             <button
-                                onClick={() => setEan13Count(prev => Math.max(1, prev + 1))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setEan13Count(prev => Math.max(1, prev + 1));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 +1
@@ -592,22 +713,34 @@ export default function CreateDuplicateWindow() {
                         </div>
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => setEan13Count(prev => Math.max(1, prev - 1))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setEan13Count(prev => Math.max(1, prev - 1));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 -1
                             </button>
                             <button
-                                onClick={() => setEan13Count(prev => Math.max(1, prev - 5))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setEan13Count(prev => Math.max(1, prev - 5));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 -5
                             </button>
                             <button
-                                onClick={() => setEan13Count(prev => Math.max(1, prev - 10))}
-                                disabled={loading}
+                                onClick={() => {
+                                    if (!confirmOpen) {
+                                        setEan13Count(prev => Math.max(1, prev - 10));
+                                    }
+                                }}
+                                disabled={loading || confirmOpen}
                                 className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 -10
@@ -626,7 +759,15 @@ export default function CreateDuplicateWindow() {
                 </div>
             )}
             {confirmOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center"
+                    onKeyDown={(e) => {
+                        e.stopPropagation();
+                        handleConfirmAction(e);
+                    }}
+                    tabIndex={-1}
+                    data-modal="confirm"
+                >
                     <div className="absolute inset-0 bg-black/50" onClick={() => { setConfirmOpen(false); window.dispatchEvent(new CustomEvent('scan-confirm', { detail: false })); }} />
                     <div className="relative z-10 w-full max-w-md rounded-lg bg-white dark:bg-gray-900 p-4 shadow-xl border border-gray-200 dark:border-gray-700">
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">Повторное сканирование</h3>
