@@ -95,3 +95,31 @@ export async function getTotalScansCount(): Promise<number> {
     );
 }
 
+/**
+ * Гарантирует, что TTL-индекс для scanHistory создан (автоудаление старых записей)
+ */
+export async function ensureScanHistoryTTLIndex() {
+    await createScanHistoryTTLIndex();
+}
+
+/**
+ * Создать индекс для автоматического удаления старых записей (TTL)
+ */
+export async function createScanHistoryTTLIndex(): Promise<void> {
+    const collection = await getScanHistoryCollection();
+    try {
+        // Создаем TTL индекс - записи автоматически удаляются через 24 часа
+        await collection.createIndex(
+            { scannedAt: 1 },
+            {
+                expireAfterSeconds: 24 * 60 * 60, // 24 часа в секундах
+                name: 'scan_history_ttl',
+            }
+        );
+        console.log('TTL индекс для истории сканирования создан успешно');
+    } catch (error) {
+        // Индекс уже может существовать, игнорируем ошибку
+        console.log('TTL индекс уже существует или произошла ошибка при создании:', error);
+    }
+}
+

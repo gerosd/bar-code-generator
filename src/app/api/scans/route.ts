@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { findRecentScansWithPagination, getTotalScansCount } from '@/lib/mongo/scanHistory'
+import { findRecentScansWithPagination, getTotalScansCount, ensureScanHistoryTTLIndex } from '@/lib/mongo/scanHistory'
 
 export async function GET(request: NextRequest) {
+    await ensureScanHistoryTTLIndex();
     const url = new URL(request.url)
     const limitParam = url.searchParams.get('limit')
     const offsetParam = url.searchParams.get('offset')

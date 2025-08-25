@@ -121,18 +121,18 @@ export default function ServerTemplates() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4">Выбор шаблона для печати</h2>
-                <p className="text-gray-600 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Выбор шаблона для печати</h2>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
                     Выберите один из трех доступных шаблонов для печати этикеток. 
                     Выбранный шаблон будет автоматически использоваться при печати и сохранится в настройках клиента.
                 </p>
 
                 {message && (
-                    <div className={`mb-4 p-3 rounded-md ${
+                    <div className={`mb-4 p-3 rounded-md border ${
                         message.type === 'success' 
-                            ? 'bg-green-50 text-green-800 border border-green-200' 
-                            : 'bg-red-50 text-red-800 border border-red-200'
+                            ? 'bg-green-50 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700' 
+                            : 'bg-red-50 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-700'
                     }`}>
                         {message.text}
                     </div>
@@ -144,13 +144,13 @@ export default function ServerTemplates() {
                             key={template.id}
                             className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                                 selectedTemplate === template.id
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900'
+                                    : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
                             }`}
                             onClick={() => handleTemplateChange(template.id)}
                         >
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-medium text-gray-900">{template.name}</h3>
+                                <h3 className="font-medium text-gray-900 dark:text-gray-100">{template.name}</h3>
                                 {selectedTemplate === template.id && (
                                     <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                                         <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -160,9 +160,9 @@ export default function ServerTemplates() {
                                 )}
                             </div>
                             
-                            <p className="text-sm text-gray-600 mb-3">{template.description}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{template.description}</p>
                             
-                            <div className="bg-gray-100 p-3 rounded text-xs text-gray-700 font-mono">
+                            <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded text-xs text-gray-700 dark:text-gray-200 font-mono">
                                 {template.preview}
                             </div>
 
@@ -173,16 +173,16 @@ export default function ServerTemplates() {
                             {isUpdating && selectedTemplate === template.id && (
                                 <div className="mt-3 flex items-center justify-center">
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                                    <span className="ml-2 text-sm text-gray-500">Обновление...</span>
+                                    <span className="ml-2 text-sm text-gray-500 dark:text-gray-300">Обновление...</span>
                                 </div>
                             )}
                         </div>
                     ))}
                 </div>
 
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h3 className="font-medium text-gray-900 mb-2">Текущий выбранный шаблон</h3>
-                    <p className="text-sm text-gray-600">
+                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Текущий выбранный шаблон</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                         <strong>Клиент:</strong> {currentClient.name}<br />
                         <strong>Шаблон:</strong> {TEMPLATE_OPTIONS.find(t => t.id === selectedTemplate)?.name}<br />
                         <strong>Статус:</strong> {isUpdating ? 'Обновление...' : 'Сохранен в базе данных'}
@@ -190,12 +190,12 @@ export default function ServerTemplates() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold mb-4">Информация о шаблонах</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Информация о шаблонах</h2>
                 <div className="space-y-4">
                     <div>
-                        <h3 className="font-medium text-gray-900 mb-2">Как это работает</h3>
-                        <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Как это работает</h3>
+                        <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-disc list-inside">
                             <li>Выбранный шаблон автоматически сохраняется в настройках вашего клиента</li>
                             <li>При печати этикеток система будет использовать выбранный шаблон</li>
                             <li>Настройки сохраняются в базе данных MongoDB</li>
@@ -205,12 +205,12 @@ export default function ServerTemplates() {
                     </div>
                     
                     <div>
-                        <h3 className="font-medium text-gray-900 mb-2">ZPL коды шаблонов</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">ZPL коды шаблонов</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
                             ZPL коды для каждого шаблона уже настроены в системе. 
                             При необходимости вы можете изменить их в файле API печати.
                         </p>
-                        <div className="mt-3 p-3 bg-gray-100 rounded text-xs text-gray-700 font-mono">
+                        <div className="mt-3 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-700 dark:text-gray-200 font-mono">
                             <strong>Шаблон 1 (Стандартный):</strong> Классический макет с размером шрифта 24<br/>
                             <strong>Шаблон 2 (Компактный):</strong> Уменьшенный макет с размером шрифта 20<br/>
                             <strong>Шаблон 3 (Расширенный):</strong> Расширенная информация с датой печати, размер шрифта 28
