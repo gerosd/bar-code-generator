@@ -2,11 +2,58 @@ import {NextRequest, NextResponse} from 'next/server';
 import {findProductByBarcode} from '@/lib/mongo/dynamicWBData';
 import {findScanByCode, recordScan} from '@/lib/mongo/scanHistory';
 import {getClientById} from '@/lib/mongo/clients';
+import { getLabelTemplateById } from "@/lib/mongo/labelTemplates";
 import net from 'net';
 import {PrintData} from "@/lib/types/generation";
+import type { LabelElement } from "@/lib/types/labelEditor";
 
 const PRINTER_IP = '10.222.10.86';
 const PRINTER_PORT = 9100;
+
+// Функция для генерации ZPL кода из пользовательского шаблона
+function generateZPLFromCustomTemplate(elements: LabelElement[], data: any): string {
+    let zplCommands = '^XA\n^CI28\n'; // Начало этикетки и установка кодировки UTF-8
+
+    for (const element of elements) {
+        if (!element.visible) continue;
+
+        const x = Math.round(element.position.x);
+        const y = Math.round(element.position.y);
+
+        switch (element.type) {
+            case 'productName':
+                zplCommands += `^CF0,${element.fontSize || 24}\n`;
+                zplCommands += `^FO${x},${y}^FD${data.productName || ''}^FS\n`;
+                break;
+
+            case 'nmId':
+                zplCommands += `^CF0,${element.fontSize || 20}\n`;
+                zplCommands += `^FO${x},${y}^FDАртикул: ${data.nmId || ''}^FS\n`;
+                break;
+
+            case 'vendorCode':
+                zplCommands += `^CF0,${element.fontSize || 20}\n`;
+                zplCommands += `^FO${x},${y}^FDАртикул продавца:^FS\n`;
+                zplCommands += `^FO${x},${y + 25}^FD${data.vendorCode || ''}^FS\n`;
+                break;
+
+            case 'productSize':
+                zplCommands += `^CF0,${element.fontSize || 20}\n`;
+                zplCommands += `^FO${x},${y}^FDРазмер: ${data.productSize || ''}^FS\n`;
+                break;
+
+            case 'dataMatrix':
+                // Используем стандартный размер для DataMatrix
+                const matrixSize = 5;
+                const size = 200;
+                zplCommands += `^FO${x},${y}^BXN,${matrixSize},${size}^FD${data.scannedData || ''}^FS\n`;
+                break;
+        }
+    }
+
+    zplCommands += '^XZ'; // Конец этикетки
+    return zplCommands;
+}
 
 // Функция для получения ZPL кода по шаблону
 function getZPLByTemplate(template: string, data: any): string {
@@ -79,13 +126,23 @@ export async function POST(request: NextRequest) {
         
         let templateToUse = selectedTemplate || 'template1'; // По умолчанию template1
         
+        let customTemplate = null;
+        
         if (currentClientId && !selectedTemplate) {
             // Если шаблон не указан, получаем из настроек клиента
             const client = await getClientById(currentClientId);
             if (client?.selectedPrintTemplate) {
                 templateToUse = client.selectedPrintTemplate;
+                
+                // Если выбран пользовательский шаблон, загружаем его
+                if (templateToUse === 'custom' && client.customLabelTemplateId) {
+                    customTemplate = await getLabelTemplateById(client.customLabelTemplateId);
+                    console.log('Loaded custom template:', customTemplate?.name);
+                }
             }
         }
+        
+        console.log('Template to use:', templateToUse, 'Custom template:', !!customTemplate);
 
         const isScannedEAN13 = /^\d{13}$/.test(scannedData);
 
@@ -118,13 +175,29 @@ export async function POST(request: NextRequest) {
         } else {
             // Печать DataMatrix с выбранным шаблоном
             const dmCount = Math.max(1, Number(dataMatrixCount ?? 1));
-            const dataMatrixSingle = getZPLByTemplate(templateToUse, {
-                productName,
-                scannedData,
-                nmId,
-                vendorCode,
-                productSize
-            });
+            
+            let dataMatrixSingle: string;
+            
+            if (templateToUse === 'custom' && customTemplate) {
+                // Используем пользовательский шаблон
+                dataMatrixSingle = generateZPLFromCustomTemplate(customTemplate.elements, {
+                    productName,
+                    scannedData,
+                    nmId,
+                    vendorCode,
+                    productSize
+                });
+            } else {
+                // Используем предустановленный шаблон
+                dataMatrixSingle = getZPLByTemplate(templateToUse, {
+                    productName,
+                    scannedData,
+                    nmId,
+                    vendorCode,
+                    productSize
+                });
+            }
+            
             zplPayload += dataMatrixSingle.repeat(dmCount);
 
             // Проверка на EAN-13 в DataMatrix — при наличии добавляем вторую этикетку

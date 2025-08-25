@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useCurrentClient } from '@/components/providers/ClientProvider'
 import { updateClientPrintTemplateAction } from '@/lib/actions/client-actions'
+import { getClientLabelTemplatesAction } from '@/lib/actions/labelTemplate-actions'
 import type { PrintTemplate } from '@/lib/types/client'
 import preview1 from '@/public/label_1.webp';
 import preview2 from '@/public/label_1.webp';
@@ -39,6 +40,13 @@ const TEMPLATE_OPTIONS: TemplateOption[] = [
         description: 'Расширенный макет с дополнительной информацией',
         preview: 'Расширенная информация с датой печати, размер шрифта 28',
         image: preview3
+    },
+    {
+        id: 'custom',
+        name: 'Пользовательский шаблон',
+        description: 'Используйте свой собственный шаблон, созданный в редакторе',
+        preview: 'Настройте расположение и размеры элементов по своему желанию',
+        image: preview1
     }
 ]
 
@@ -47,6 +55,7 @@ export default function ServerTemplates() {
     const [selectedTemplate, setSelectedTemplate] = useState<PrintTemplate>('template1')
     const [isUpdating, setIsUpdating] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const [hasCustomTemplates, setHasCustomTemplates] = useState(false)
 
     useEffect(() => {
         if (currentClient?.selectedPrintTemplate) {
@@ -54,8 +63,34 @@ export default function ServerTemplates() {
         }
     }, [currentClient])
 
+    useEffect(() => {
+        const checkCustomTemplates = async () => {
+            if (!currentClient) return
+            
+            try {
+                const result = await getClientLabelTemplatesAction(currentClient.id)
+                if (result.success && result.data) {
+                    setHasCustomTemplates(result.data.length > 0)
+                }
+            } catch (error) {
+                console.error('Ошибка проверки пользовательских шаблонов:', error)
+            }
+        }
+
+        checkCustomTemplates()
+    }, [currentClient])
+
     const handleTemplateChange = async (template: PrintTemplate) => {
         if (!currentClient) return
+
+        // Для пользовательского шаблона проверяем, создан ли он
+        if (template === 'custom' && !hasCustomTemplates) {
+            setMessage({ 
+                type: 'error', 
+                text: 'Сначала создайте пользовательский шаблон в Редакторе этикеток' 
+            })
+            return
+        }
 
         setIsUpdating(true)
         setMessage(null)

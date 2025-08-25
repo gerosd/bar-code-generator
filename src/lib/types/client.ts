@@ -3,7 +3,7 @@ import type { ObjectId } from 'mongodb'
 /**
  * Доступные шаблоны для печати
  */
-export type PrintTemplate = 'template1' | 'template2' | 'template3'
+export type PrintTemplate = 'template1' | 'template2' | 'template3' | 'custom'
 
 /**
  * Роли пользователя внутри клиента
@@ -27,6 +27,7 @@ export interface ClientDocument {
 	name: string
 	members: ClientMember[]
 	selectedPrintTemplate?: PrintTemplate
+	customLabelTemplateId?: string
 	createdAt: Date
 	updatedAt: Date
 }
@@ -39,6 +40,7 @@ export interface ClientType {
 	name: string
 	members: ClientMember[]
 	selectedPrintTemplate?: PrintTemplate
+	customLabelTemplateId?: string
 	createdAt: Date
 	updatedAt: Date
 }

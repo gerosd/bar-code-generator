@@ -3,7 +3,7 @@
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers, FaUser, FaBook } from 'react-icons/fa'
+import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers, FaUser, FaBook, FaEdit } from 'react-icons/fa'
 import {GoProjectTemplate} from "react-icons/go";
 
 interface SidebarProps {
@@ -13,7 +13,7 @@ interface SidebarProps {
     closeDrawer?: () => void
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawer, closeDrawer }: SidebarProps) => {
+const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isInsideDrawer, closeDrawer }: SidebarProps) => {
     const pathname = usePathname();
 
     const isActive = (path: string) => {
@@ -140,6 +140,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                         </Link>
                     </li>
 
+                    <li>
+                        <Link
+                            href="/label-editor"
+                            onClick={handleLinkClick}
+                            className={`flex items-center p-3 text-base rounded-lg transition-colors ${
+                                isActive('/label-editor')
+                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                                    : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            <FaEdit className='w-5 h-5 mr-3' />
+                            <span>Редактор этикеток</span>
+                        </Link>
+                    </li>
+
                     {isAdmin && (
                         <>
                             <li>
@@ -153,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isClientAdmin, isInsideDrawe
                                     }`}
                                     >
                                     <GoProjectTemplate className='w-5 h-5 mr-3' />
-                                    <span>Шаблоны этикеток</span>
+                                    <span>Готовые шаблоны</span>
                                 </Link>
                             </li>
                             <li className='px-4 pt-4 pb-2'>

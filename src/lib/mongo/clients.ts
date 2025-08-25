@@ -44,6 +44,7 @@ function documentToClient(doc: ClientDocument): ClientType {
 		name: doc.name,
 		members: doc.members,
 		selectedPrintTemplate: doc.selectedPrintTemplate || 'template1',
+		customLabelTemplateId: doc.customLabelTemplateId,
 		createdAt: doc.createdAt,
 		updatedAt: doc.updatedAt,
 	}
@@ -357,6 +358,43 @@ export async function updateClientPrintTemplate(clientId: string, template: Prin
 		return false
 	} catch (error) {
 		logger.error('Ошибка обновления шаблона печати клиента:', { metadata: { clientId, template, error } })
+		throw error
+	}
+}
+
+/**
+ * Обновить данные клиента
+ * @param clientId ID клиента
+ * @param updates Обновления
+ * @returns Обновленный клиент или null
+ */
+export async function updateClient(clientId: string, updates: Partial<{
+	name: string
+	selectedPrintTemplate: PrintTemplate
+	customLabelTemplateId: string
+}>): Promise<ClientType | null> {
+	try {
+		const collection = await getClientsCollection()
+		const result = await collection.findOneAndUpdate(
+			{ _id: new ObjectId(clientId) },
+			{
+				$set: {
+					...updates,
+					updatedAt: new Date(),
+				},
+			},
+			{ returnDocument: 'after' }
+		)
+
+		if (result) {
+			logger.database('Клиент обновлен', { metadata: { clientId, updates } })
+			return documentToClient(result)
+		}
+
+		logger.warn('Клиент не был обновлен (не найден)', { metadata: { clientId, updates } })
+		return null
+	} catch (error) {
+		logger.error('Ошибка обновления клиента:', { metadata: { clientId, updates, error } })
 		throw error
 	}
 }

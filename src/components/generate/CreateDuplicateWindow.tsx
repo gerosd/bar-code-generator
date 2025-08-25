@@ -162,10 +162,9 @@ export default function CreateDuplicateWindow() {
 
 	const directPrint = async (payload: any) => {
         try {
-            // Добавляем выбранный шаблон из настроек клиента
+            // Не передаем selectedTemplate, чтобы API автоматически определил его из настроек клиента
             const printPayload = {
-                ...payload,
-                selectedTemplate: currentClient?.selectedPrintTemplate || 'template1'
+                ...payload
             };
 
             const response = await fetch('/api/print', {
