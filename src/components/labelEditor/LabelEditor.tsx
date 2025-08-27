@@ -23,8 +23,13 @@ export default function LabelEditor({ template, onSaveAction }: LabelEditorProps
         ? currentTemplate.elements.find(el => el.id === selectedElementId) || null
         : null
 
+    // Обертка для обновления шаблона
+    const updateTemplate = useCallback((updater: (prev: LabelTemplate) => LabelTemplate) => {
+        setCurrentTemplate(updater)
+    }, [])
+
     const handleElementPositionChange = useCallback((elementId: string, position: { x: number; y: number }) => {
-        setCurrentTemplate(prev => ({
+        updateTemplate(prev => ({
             ...prev,
             elements: prev.elements.map(element =>
                 element.id === elementId
@@ -32,10 +37,10 @@ export default function LabelEditor({ template, onSaveAction }: LabelEditorProps
                     : element
             )
         }))
-    }, [])
+    }, [updateTemplate])
 
     const handleElementUpdate = useCallback((elementId: string, updates: Partial<LabelElement>) => {
-        setCurrentTemplate(prev => ({
+        updateTemplate(prev => ({
             ...prev,
             elements: prev.elements.map(element =>
                 element.id === elementId
@@ -43,7 +48,7 @@ export default function LabelEditor({ template, onSaveAction }: LabelEditorProps
                     : element
             )
         }))
-    }, [])
+    }, [updateTemplate])
 
     const handleCanvasClick = (e: React.MouseEvent) => {
         if (e.target === canvasRef.current) {
@@ -67,7 +72,7 @@ export default function LabelEditor({ template, onSaveAction }: LabelEditorProps
     }
 
     const handleSizeChange = (newSize: LabelSize) => {
-        setCurrentTemplate(prev => ({
+        updateTemplate(prev => ({
             ...prev,
             labelSize: newSize
         }))

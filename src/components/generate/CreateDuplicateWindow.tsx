@@ -2,13 +2,24 @@
 
 import React, {useState, useEffect, useRef, useCallback} from 'react';
 import type { ProductDatabaseView } from '@/lib/types/product';
+import { extractBarcode } from '@/lib/utils/barcodeExtract';
 
-export default function CreateDuplicateWindow() {
+interface CreateDuplicateWindowProps {
+    dataMatrixCount: number;
+    setDataMatrixCountAction: (count: number) => void;
+    barcodeAmount: number;
+    setBarcodeAmountAction: (amount: number) => void;
+}
+
+export default function CreateDuplicateWindow({ 
+    dataMatrixCount, 
+    setDataMatrixCountAction,
+    barcodeAmount, 
+    setBarcodeAmountAction
+}: CreateDuplicateWindowProps) {
     const [scannedData, setScannedData] = useState<string>('');
     const inputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
-    const [dataMatrixCount, setDataMatrixCount] = useState<number>(1);
-    const [ean13Count, setEan13Count] = useState<number>(1);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const dupInfoRef = useRef<{ code: string; count: number } | null>(null);
     const [activeTab, setActiveTab] = useState<'scan' | 'product'>('scan');
@@ -272,17 +283,16 @@ export default function CreateDuplicateWindow() {
                 if (!shouldProceed) {
                     return;
                 }
-                // Получаем 13 цифр после первых трёх символов
-                const barcodeCandidate = dataMatrix.slice(3, 16);
-                const isEAN13 = /^\d{13}$/.test(barcodeCandidate);
+                // Получаем штрихкод после первых трёх символов
+                const barcode = extractBarcode(dataMatrix);
                 // Получаем данные о товаре по баркоду
                 let productName = '';
                 let productSize = '';
                 let nmId = '';
                 let vendorCode = '';
-                if (isEAN13) {
+                if (barcode) {
                     try {
-                        const res = await fetch(`/api/print?barcode=${encodeURIComponent(barcodeCandidate)}`);
+                        const res = await fetch(`/api/print?barcode=${encodeURIComponent(barcode)}`);
                         const json = await res.json();
                         if (json.success && json.product && json.product.title) {
                             productName = json.product.title;
@@ -301,7 +311,7 @@ export default function CreateDuplicateWindow() {
                     nmId,
                     vendorCode,
                     dataMatrixCount,
-                    ean13Count
+                    barcodeAmount: barcodeAmount
 				});
             } finally {
                 setLoading(false);
@@ -326,7 +336,6 @@ export default function CreateDuplicateWindow() {
 
             setLoading(true);
             try {
-                const sizeBarcode = selectedSize.skus?.[0]; // Берем штрихкод из выбранного размера.
                 // Печатаем DataMatrix код
                 await directPrint({
                     scannedData: dataMatrix,
@@ -335,8 +344,7 @@ export default function CreateDuplicateWindow() {
                     nmId: selectedProduct.nmID,
                     vendorCode: selectedProduct.vendorCode || '',
                     dataMatrixCount,
-                    ean13Count,
-                    diffEAN13: sizeBarcode
+                    barcodeAmount: barcodeAmount
                 });
 
                 setProductInputData('');
@@ -586,7 +594,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setDataMatrixCount(prev => Math.max(1, prev + 10));
+                                        setDataMatrixCountAction(Math.max(0, dataMatrixCount + 10));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -597,7 +605,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setDataMatrixCount(prev => Math.max(1, prev + 5));
+                                        setDataMatrixCountAction(Math.max(0, dataMatrixCount + 5));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -608,7 +616,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setDataMatrixCount(prev => Math.max(1, prev + 1));
+                                        setDataMatrixCountAction(Math.max(0, dataMatrixCount + 1));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -624,7 +632,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setDataMatrixCount(prev => Math.max(1, prev - 1));
+                                        setDataMatrixCountAction(Math.max(0, dataMatrixCount - 1));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -635,7 +643,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setDataMatrixCount(prev => Math.max(1, prev - 5));
+                                        setDataMatrixCountAction(Math.max(0, dataMatrixCount - 5));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -646,7 +654,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setDataMatrixCount(prev => Math.max(1, prev - 10));
+                                        setDataMatrixCountAction(Math.max(0, dataMatrixCount - 10));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -664,7 +672,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setEan13Count(prev => Math.max(1, prev + 10));
+                                        setBarcodeAmountAction(Math.max(0, barcodeAmount + 10));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -675,7 +683,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setEan13Count(prev => Math.max(1, prev + 5));
+                                        setBarcodeAmountAction(Math.max(0, barcodeAmount + 5));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -686,7 +694,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setEan13Count(prev => Math.max(1, prev + 1));
+                                        setBarcodeAmountAction(Math.max(0, barcodeAmount + 1));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -696,13 +704,13 @@ export default function CreateDuplicateWindow() {
                             </button>
                         </div>
                         <div className="text-lg font-semibold text-gray-900 dark:text-white min-w-[3rem] text-center">
-                            {ean13Count}
+                            {barcodeAmount}
                         </div>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setEan13Count(prev => Math.max(1, prev - 1));
+                                        setBarcodeAmountAction(Math.max(0, barcodeAmount - 1));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -713,7 +721,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setEan13Count(prev => Math.max(1, prev - 5));
+                                        setBarcodeAmountAction(Math.max(0, barcodeAmount - 5));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}
@@ -724,7 +732,7 @@ export default function CreateDuplicateWindow() {
                             <button
                                 onClick={() => {
                                     if (!confirmOpen) {
-                                        setEan13Count(prev => Math.max(1, prev - 10));
+                                        setBarcodeAmountAction(Math.max(0, barcodeAmount - 10));
                                     }
                                 }}
                                 disabled={loading || confirmOpen}

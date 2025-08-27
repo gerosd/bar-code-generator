@@ -4,7 +4,7 @@ import { useToast } from '@/components/providers/ToastProvider' // Для уве
 import { updateClientName } from '@/lib/actions/client-actions'
 import type { ClientType } from '@/lib/types/client'
 import { Button, Card, List, ListItem, TextInput, Tooltip } from 'flowbite-react'
-import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
+import React, { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import { FaCheck, FaEdit, FaInfoCircle, FaPlus, FaTimes, FaUsers } from 'react-icons/fa'
 import { ClientUsersManagementModal } from './ClientUsersManagementModal' // Предполагаем этот новый компонент
 import { CreateClientModal } from './CreateClientModal' // Импортируем модальное окно

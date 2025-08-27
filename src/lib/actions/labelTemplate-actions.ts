@@ -12,8 +12,7 @@ import { getDefaultLabelSize } from '@/lib/utils/labelSizeUtils'
 import { updateClient } from '@/lib/mongo/clients'
 import type { 
     CreateLabelTemplateData, 
-    UpdateLabelTemplateData, 
-    LabelTemplate 
+    UpdateLabelTemplateData
 } from '@/lib/types/labelEditor'
 
 export interface ActionResult {

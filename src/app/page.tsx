@@ -1,5 +1,5 @@
 import { Button, Card } from 'flowbite-react';
-import { QrCode, FileText, CheckCircle, Settings, Users, Building, User, Book, Edit, BookOpen, Store, LucideBookTemplate } from 'lucide-react';
+import { QrCode, FileText, CheckCircle, Users, Building, User, Book, Edit, BookOpen, Store, LucideBookTemplate } from 'lucide-react';
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 

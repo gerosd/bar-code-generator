@@ -3,7 +3,7 @@
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers, FaUser, FaBook, FaEdit, FaBroom } from 'react-icons/fa'
+import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers, FaUser, FaBook, FaEdit } from 'react-icons/fa'
 import {GoProjectTemplate} from "react-icons/go";
 
 interface SidebarProps {

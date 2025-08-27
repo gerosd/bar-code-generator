@@ -16,7 +16,7 @@ const getElementDisplayName = (type: LabelElementType): string => {
         case 'productName': return 'Название товара'
         case 'productSize': return 'Размер'
         case 'nmId': return 'Артикул WB'
-        case 'vendorCode': return 'Артикул продавца'
+        case 'vendorCode': return 'Артикул продавца\nпродавец'
         case 'dataMatrix': return 'DataMatrix'
         default: return type
     }

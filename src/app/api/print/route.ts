@@ -6,13 +6,14 @@ import { getLabelTemplateById } from "@/lib/mongo/labelTemplates";
 import net from 'net';
 import {PrintData} from "@/lib/types/generation";
 import type { LabelElement } from "@/lib/types/labelEditor";
+import { generateZPLBarcode, getLabelDimensions, generateZPLWithLabelSize } from '@/lib/utils/barcodeExtract';
 
 const PRINTER_IP = '10.222.10.86';
 const PRINTER_PORT = 9100;
 
 // Функция для генерации ZPL кода из пользовательского шаблона
 function generateZPLFromCustomTemplate(elements: LabelElement[], data: any): string {
-    let zplCommands = '^XA\n^CI28\n'; // Начало этикетки и установка кодировки UTF-8
+    let zplCommands = '^CI28\n'; // ^XA будет добавлен в generateZPLWithLabelSize
 
     for (const element of elements) {
         if (!element.visible) continue;
@@ -51,67 +52,67 @@ function generateZPLFromCustomTemplate(elements: LabelElement[], data: any): str
         }
     }
 
-    zplCommands += '^XZ'; // Конец этикетки
+    // Убираем ^XZ, так как он будет добавлен в generateZPLWithLabelSize
     return zplCommands;
 }
 
 // Функция для получения ZPL кода по шаблону
 function getZPLByTemplate(template: string, data: any): string {
+    let zplContent: string;
+    
     switch (template) {
         case 'template1':
             // Шаблон 1 - стандартный
-            return `^XA
-                ^CI28
+            zplContent = `^CI28
                 ^CF0,24
                 ^FO10,10^FD${data.productName}^FS
                 ^FO270,120^BXN,5,200^FD${data.scannedData}^FS
                 ^FO10,70^FDАртикул: ${data.nmId}^FS
                 ^FO10,130^FDАртикул продавца:^FS
                 ^FO10,165^FD${data.vendorCode}^FS
-                ^FO10,220^FDРазмер: ${data.productSize}^FS
-                ^XZ`;
+                ^FO10,220^FDРазмер: ${data.productSize}^FS`;
+            break;
         case 'template2':
             // Шаблон 2 - компактный
-            return `^XA
-                ^CI28
+            zplContent = `^CI28
                 ^CF0,20
                 ^FO10,10^FD${data.productName}^FS
                 ^FO250,100^BXN,4,150^FD${data.scannedData}^FS
                 ^FO10,60^FD${data.nmId} | ${data.vendorCode}^FS
-                ^FO10,90^FDРазмер: ${data.productSize}^FS
-                ^XZ`;
+                ^FO10,90^FDРазмер: ${data.productSize}^FS`;
+            break;
         case 'template3':
             // Шаблон 3 - расширенный
-            return `^XA
-                ^CI28
+            zplContent = `^CI28
                 ^CF0,28
                 ^FO10,10^FD${data.productName}^FS
                 ^FO280,130^BXN,6,220^FD${data.scannedData}^FS
                 ^FO10,70^FDАртикул ВБ: ${data.nmId}^FS
                 ^FO10,110^FDАртикул продавца: ${data.vendorCode}^FS
                 ^FO10,150^FDРазмер: ${data.productSize}^FS
-                ^FO10,190^FDДата: ${new Date().toLocaleDateString('ru-RU')}^FS
-                ^XZ`;
+                ^FO10,190^FDДата: ${new Date().toLocaleDateString('ru-RU')}^FS`;
+            break;
         default:
             // По умолчанию используем template1
-            return `^XA
-                ^CI28
+            zplContent = `^CI28
                 ^CF0,24
                 ^FO10,10^FD${data.productName}^FS
                 ^FO270,120^BXN,5,200^FD${data.scannedData}^FS
                 ^FO10,70^FDАртикул: ${data.nmId}^FS
                 ^FO10,130^FDАртикул продавца:^FS
                 ^FO10,165^FD${data.vendorCode}^FS
-                ^FO10,220^FDРазмер: ${data.productSize}^FS
-                ^XZ`;
+                ^FO10,220^FDРазмер: ${data.productSize}^FS`;
+            break;
     }
+    
+    return zplContent;
 }
 
 export async function POST(request: NextRequest) {
     try {
         const body: PrintData = await request.json();
         let {scannedData, selectedTemplate} = body;
-        const {productName, productSize, nmId, vendorCode, dataMatrixCount, ean13Count, diffEAN13} = body;
+        const {productName, productSize, nmId, vendorCode, dataMatrixCount, barcodeAmount, diffEAN13} = body;
 
         if (!scannedData) {
             return NextResponse.json(
@@ -142,9 +143,16 @@ export async function POST(request: NextRequest) {
             }
         }
         
-        console.log('Template to use:', templateToUse, 'Custom template:', !!customTemplate);
-
-        const isScannedEAN13 = /^\d{13}$/.test(scannedData);
+        const barcode = generateZPLBarcode(scannedData);
+        console.log("Сгенерированный ZPL: ", barcode);
+        console.log("Параметры печати:", {
+            diffEAN13,
+            productName,
+            nmId,
+            vendorCode,
+            barcodeAmount,
+            dataMatrixCount
+        });
 
         // Записываем факт сканирования DataMatrix для истории
         // и используем для контроля повторного ввода на клиенте через отдельный API GET (см. Ниже)
@@ -154,32 +162,25 @@ export async function POST(request: NextRequest) {
         let zplPayload = '';
 
         if (diffEAN13) {
-            const count = Math.max(1, Number(ean13Count ?? 1));
-            const single = `^XA
-                ^FO55,20^BY4
-                ^BEN,240,Y,N
-                ^FD${diffEAN13}^FS
-                ^XZ`;
-            zplPayload += single.repeat(count);
-        }
-
-        if (isScannedEAN13 && !diffEAN13) {
-            // Печать только EAN-13
-            const count = Math.max(1, Number(ean13Count ?? 1));
-            const single = `^XA
-                ^FO55,20^BY4
-                ^BEN,240,Y,N
-                ^FD${scannedData.slice(0, -1)}^FS
-                ^XZ`;
-            zplPayload = single.repeat(count);
-        } else {
-            // Печать DataMatrix с выбранным шаблоном
-            const dmCount = Math.max(1, Number(dataMatrixCount ?? 1));
+            const count = Math.max(1, Number(barcodeAmount ?? 1));
+            zplPayload += barcode.repeat(count);
+        } else if (barcode && !productName && !nmId && !vendorCode) {
+            // Печать только штрихкода (когда нет дополнительных данных о продукте)
+            const count = Math.max(1, Number(barcodeAmount ?? 1));
+            zplPayload = barcode.repeat(count);
+        } else if (barcode) {
+            // Печать DataMatrix с выбранным шаблоном + штрихкод
+            console.log("Режим печати: DataMatrix + штрихкод");
+            const dmCount = Math.max(0, Number(dataMatrixCount ?? 0));
             
             let dataMatrixSingle: string;
             
             if (templateToUse === 'custom' && customTemplate) {
-                // Используем пользовательский шаблон
+                // Используем пользовательский шаблон с заданными размерами этикетки
+                const templateDimensions = getLabelDimensions(customTemplate.labelSize);
+                
+                console.log("Используем размеры этикетки из шаблона:", templateDimensions);
+                
                 dataMatrixSingle = generateZPLFromCustomTemplate(customTemplate.elements, {
                     productName,
                     scannedData,
@@ -198,20 +199,67 @@ export async function POST(request: NextRequest) {
                 });
             }
             
+            // Используем размеры этикетки из пользовательского шаблона или стандартные
+            const dimensions = templateToUse === 'custom' && customTemplate 
+                ? getLabelDimensions(customTemplate.labelSize)
+                : getLabelDimensions();
+            
+            console.log("Используемые размеры этикетки:", dimensions);
+            
+            // Обертываем в размеры этикетки
+            dataMatrixSingle = generateZPLWithLabelSize(dataMatrixSingle, dimensions);
+            
             zplPayload += dataMatrixSingle.repeat(dmCount);
 
-            // Проверка на EAN-13 в DataMatrix — при наличии добавляем вторую этикетку
-            const barcodeCandidate = scannedData.slice(3, 16);
-            if (/^\d{13}$/.test(barcodeCandidate) && !diffEAN13) {
-                const eanCount = Math.max(0, Number(ean13Count ?? 0));
-                const ean13ZPL = `^XA
-                    ^FO55,20^BY4
-                    ^BEN,240,Y,N
-                    ^FD${barcodeCandidate.slice(0, -1)}^FS
-                    ^XZ`;
-                zplPayload += ean13ZPL.repeat(eanCount);
+            // Добавляем штрихкод после DataMatrix
+            const count = Math.max(0, Number(barcodeAmount ?? 0));
+            zplPayload += barcode.repeat(count);
+        } else {
+            // Если штрихкод не извлечен, печатаем только DataMatrix
+            console.log("Режим печати: только DataMatrix (штрихкод не извлечен)");
+            const dmCount = Math.max(0, Number(dataMatrixCount ?? 0));
+            
+            let dataMatrixSingle: string;
+            
+            if (templateToUse === 'custom' && customTemplate) {
+                // Используем пользовательский шаблон с заданными размерами этикетки
+                const templateDimensions = getLabelDimensions(customTemplate.labelSize);
+                
+                console.log("Используем размеры этикетки из шаблона:", templateDimensions);
+                
+                dataMatrixSingle = generateZPLFromCustomTemplate(customTemplate.elements, {
+                    productName,
+                    scannedData,
+                    nmId,
+                    vendorCode,
+                    productSize
+                });
+            } else {
+                // Используем предустановленный шаблон
+                dataMatrixSingle = getZPLByTemplate(templateToUse, {
+                    productName,
+                    scannedData,
+                    nmId,
+                    vendorCode,
+                    productSize
+                });
             }
+            
+            // Используем размеры этикетки из пользовательского шаблона или стандартные
+            const dimensions = templateToUse === 'custom' && customTemplate 
+                ? getLabelDimensions(customTemplate.labelSize)
+                : getLabelDimensions();
+            
+            console.log("Используемые размеры этикетки (только DataMatrix):", dimensions);
+            
+            // Обертываем в размеры этикетки
+            dataMatrixSingle = generateZPLWithLabelSize(dataMatrixSingle, dimensions);
+            
+            zplPayload += dataMatrixSingle.repeat(dmCount);
         }
+
+        console.log("Финальный ZPL payload для печати:", zplPayload);
+        console.log("Длина ZPL payload:", zplPayload.length);
 
         // Одна TCP-сессия для отправки всех команд
         await new Promise<void>((resolve, reject) => {

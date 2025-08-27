@@ -16,7 +16,7 @@ export type PrintData = {
     nmId?: string; // Артикул ВБ
     vendorCode?: string; // Артикул продавца
     dataMatrixCount?: number; // Количество этикеток DataMatrix для печати
-    ean13Count?: number; // Количество этикеток EAN-13 для печати
+    barcodeAmount?: number; // Количество этикеток EAN-13 для печати
     diffEAN13?: string; // Штрихкод для печати на отдельной этикетке
     selectedTemplate?: PrintTemplate; // Выбранный шаблон для печати
 }

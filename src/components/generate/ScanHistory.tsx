@@ -8,7 +8,12 @@ type Item = {
     count: number
 }
 
-export default function ScanHistory() {
+interface ScanHistoryProps {
+    dataMatrixCount: number;
+    barcodeAmount: number;
+}
+
+export default function ScanHistory({ dataMatrixCount, barcodeAmount }: ScanHistoryProps) {
     const [items, setItems] = useState<Item[]>([])
     const [loading, setLoading] = useState(false)
     const [loadingMore, setLoadingMore] = useState(false)
@@ -119,8 +124,8 @@ export default function ScanHistory() {
                                                     productSize,
                                                     nmId,
                                                     vendorCode,
-                                                    dataMatrixCount: 1,
-                                                    ean13Count: 1,
+                                                    dataMatrixCount,
+                                                    barcodeAmount,
                                                 }),
                                             })
                                         } finally {
