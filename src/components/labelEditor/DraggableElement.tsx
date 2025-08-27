@@ -9,7 +9,6 @@ interface DraggableElementProps {
     onSelectAction: (id: string) => void
     isSelected: boolean
     canvasScale: number
-    sampleData?: Record<string, string>
 }
 
 const getElementDisplayName = (type: LabelElementType): string => {
@@ -23,28 +22,12 @@ const getElementDisplayName = (type: LabelElementType): string => {
     }
 }
 
-const getElementContent = (type: LabelElementType, sampleData?: Record<string, string>): string => {
-    if (!sampleData) {
-        return getElementDisplayName(type)
-    }
-
-    switch (type) {
-        case 'productName': return sampleData.productName || 'Название товара'
-        case 'productSize': return sampleData.productSize || 'Размер'
-        case 'nmId': return `Артикул: ${sampleData.nmId || '123456'}`
-        case 'vendorCode': return `Артикул продавца:\n${sampleData.vendorCode || 'ART-001'}`
-        case 'dataMatrix': return '[DataMatrix]'
-        default: return getElementDisplayName(type)
-    }
-}
-
 export default function DraggableElement({
     element,
     onPositionChangeAction,
     onSelectAction,
     isSelected,
-    canvasScale,
-    sampleData
+    canvasScale
 }: DraggableElementProps) {
     const [isDragging, setIsDragging] = useState(false)
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
@@ -145,7 +128,7 @@ export default function DraggableElement({
                 onMouseDown={handleMouseDown}
                 title="DataMatrix код"
             >
-                {getElementContent(element.type, sampleData)}
+                {getElementDisplayName(element.type)}
             </div>
         )
     }
@@ -157,7 +140,7 @@ export default function DraggableElement({
             onMouseDown={handleMouseDown}
             title={getElementDisplayName(element.type)}
         >
-            {getElementContent(element.type, sampleData)}
+            {getElementDisplayName(element.type)}
         </div>
     )
 }

@@ -264,7 +264,15 @@ export async function GET(request: NextRequest) {
             if (sizeObj) {
                 productSize = sizeObj.wbSize || sizeObj.techSize || '';
             }
-            return NextResponse.json({success: true, product: {title: product.title, size: productSize, nmId: nmId, vendorCode: vendorCode}});
+            return NextResponse.json({
+                success: true,
+                product: {
+                    title: product.title,
+                    size: productSize,
+                    nmId: nmId,
+                    vendorCode: vendorCode
+                }
+            });
         }
 
         if (code) {

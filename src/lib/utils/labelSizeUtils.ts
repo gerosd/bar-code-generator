@@ -30,6 +30,23 @@ export function dotsToMm(pixels: number, dpi: number = DEFAULT_DPI): number {
 }
 
 /**
+ * Конвертировать миллиметры в дюймы
+ */
+export function mmToInches(mm: number): number {
+    return Math.round((mm / 25.4) * 1000) / 1000 // округляем до 3 знаков после запятой
+}
+
+/**
+ * Форматировать размеры этикетки в дюймах для Labelary API
+ * Возвращает строку в формате "ширина x высота" в дюймах
+ */
+export function formatLabelSizeForLabelary(widthMm: number, heightMm: number): string {
+    const widthInches = mmToInches(widthMm)
+    const heightInches = mmToInches(heightMm)
+    return `${widthInches}x${heightInches}`
+}
+
+/**
  * Создать объект LabelSize из размеров в мм
  */
 export function createLabelSizeFromMm(widthMm: number, heightMm: number, dpi: number = DEFAULT_DPI): LabelSize {

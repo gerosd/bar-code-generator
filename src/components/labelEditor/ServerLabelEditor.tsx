@@ -10,15 +10,6 @@ export default function ServerLabelEditor() {
     const [currentTemplate, setCurrentTemplate] = useState<LabelTemplate | null>(null)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-    // Пример данных для предварительного просмотра
-    const sampleData = {
-        productName: 'Название товара',
-        productSize: '44-46',
-        nmId: '123456789',
-        vendorCode: 'ART-001-M',
-        scannedData: '010460043993659215\\x1d91EE06\\x1d92dGVzdCBkYXRh'
-    }
-
     const handleTemplateSelect = (template: LabelTemplate) => {
         setCurrentTemplate(template)
         setMessage(null)
@@ -79,7 +70,6 @@ export default function ServerLabelEditor() {
                         <LabelEditor
                             template={currentTemplate}
                             onSaveAction={handleSaveTemplate}
-                            sampleData={sampleData}
                         />
                     </div>
                 </div>

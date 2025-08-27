@@ -2,10 +2,8 @@
 
 import React, {useState, useEffect, useRef, useCallback} from 'react';
 import type { ProductDatabaseView } from '@/lib/types/product';
-import { useCurrentClient } from '@/components/providers/ClientProvider';
 
 export default function CreateDuplicateWindow() {
-    const { currentClient } = useCurrentClient();
     const [scannedData, setScannedData] = useState<string>('');
     const inputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
@@ -13,8 +11,6 @@ export default function CreateDuplicateWindow() {
     const [ean13Count, setEan13Count] = useState<number>(1);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const dupInfoRef = useRef<{ code: string; count: number } | null>(null);
-
-    // Новые состояния для вкладок и выбора товара
     const [activeTab, setActiveTab] = useState<'scan' | 'product'>('scan');
     const [products, setProducts] = useState<ProductDatabaseView[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<ProductDatabaseView | null>(null);
@@ -28,13 +24,10 @@ export default function CreateDuplicateWindow() {
     const [searchQuery, setSearchQuery] = useState('');
     const [productInputData, setProductInputData] = useState<string>('');
     const productInputRef = useRef<HTMLInputElement>(null);
-
-    // Состояние для отслеживания последовательных нажатий клавиш
     const keySequenceRef = useRef<string>('');
     const keyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        // Обработчик глобальных нажатий клавиш для определения сканера DataMatrix
         const handleGlobalKeyDown = (e: KeyboardEvent) => {
             // Если открыто модальное окно, не обрабатываем глобальные события
             if (confirmOpen) {
@@ -51,10 +44,8 @@ export default function CreateDuplicateWindow() {
                 return;
             }
 
-            // Добавляем символ к последовательности
             keySequenceRef.current += e.key;
 
-            // Очищаем предыдущий таймаут
             if (keyTimeoutRef.current) {
                 clearTimeout(keyTimeoutRef.current);
             }
@@ -64,7 +55,6 @@ export default function CreateDuplicateWindow() {
                 keySequenceRef.current = '';
             }, 1000); // 1 секунда на ввод последовательности
 
-            // Проверяем, если последовательность равна '100110'
             if (keySequenceRef.current === '100110') {
                 // Предотвращаем попадание символов последовательности в поля ввода
                 e.preventDefault();
@@ -86,7 +76,6 @@ export default function CreateDuplicateWindow() {
             }
         };
 
-        // Добавляем глобальные обработчики
         document.addEventListener('keydown', handleGlobalKeyDown);
         document.addEventListener('input', handleInput);
 
@@ -109,7 +98,6 @@ export default function CreateDuplicateWindow() {
     // Автоматический фокус на модальном окне при открытии
     useEffect(() => {
         if (confirmOpen) {
-            // Небольшая задержка для корректного рендеринга
             const timer = setTimeout(() => {
                 const modalElement = document.querySelector('[data-modal="confirm"]');
                 if (modalElement instanceof HTMLElement) {

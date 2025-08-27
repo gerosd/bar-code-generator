@@ -9,10 +9,9 @@ import type { LabelTemplate, LabelElement, LabelSize } from '@/lib/types/labelEd
 interface LabelEditorProps {
     template: LabelTemplate
     onSaveAction: (template: LabelTemplate) => Promise<void>
-    sampleData?: Record<string, string>
 }
 
-export default function LabelEditor({ template, onSaveAction, sampleData }: LabelEditorProps) {
+export default function LabelEditor({ template, onSaveAction }: LabelEditorProps) {
     const [currentTemplate, setCurrentTemplate] = useState<LabelTemplate>(template)
     const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
@@ -197,7 +196,6 @@ export default function LabelEditor({ template, onSaveAction, sampleData }: Labe
                                         onSelectAction={setSelectedElementId}
                                         isSelected={selectedElementId === element.id}
                                         canvasScale={canvasScale}
-                                        sampleData={sampleData}
                                     />
                                 ))}
                             </div>
