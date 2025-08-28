@@ -44,28 +44,6 @@ export async function createLabelTemplate(data: CreateLabelTemplateData): Promis
 }
 
 /**
- * Получить шаблон этикетки по ID
- */
-export async function getLabelTemplateById(templateId: string): Promise<LabelTemplate | null> {
-    const collection = await getLabelTemplatesCollection()
-    
-    const doc = await collection.findOne({ _id: new ObjectId(templateId) })
-    
-    if (!doc) return null
-    
-    return {
-        id: doc._id.toString(),
-        userId: doc.userId,
-        name: doc.name,
-        description: doc.description,
-        elements: doc.elements,
-        labelSize: doc.labelSize,
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt
-    }
-}
-
-/**
  * Получить все шаблоны пользователя
  */
 export async function getLabelTemplatesByUser(userId: string): Promise<LabelTemplate[]> {

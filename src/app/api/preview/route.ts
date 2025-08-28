@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
             // Если запрошен пользовательский шаблон, получаем его из базы данных
             if (body.template === 'custom') {
                 const result = await getUserLabelTemplatesAction();
-                if (!result.success || !result.data || result.data.length === 0) {
+                if (!result.success || !Array.isArray(result.data) || result.data.length === 0) {
                     return NextResponse.json({
                         success: false,
                         error: 'Пользовательский шаблон не найден'

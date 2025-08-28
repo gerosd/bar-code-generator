@@ -26,7 +26,7 @@ export default function ServerLabelEditor() {
 
             if (result.success) {
                 setMessage({ type: 'success', text: 'Шаблон успешно сохранен' })
-                setCurrentTemplate(result.data || template)
+                setCurrentTemplate(result.data as LabelTemplate || template)
             } else {
                 setMessage({ type: 'error', text: result.error || 'Ошибка сохранения шаблона' })
             }

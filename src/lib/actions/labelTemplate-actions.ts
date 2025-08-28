@@ -1,8 +1,7 @@
 'use server'
 
 import { 
-    createLabelTemplate, 
-    getLabelTemplateById, 
+    createLabelTemplate,
     getLabelTemplatesByUser, 
     updateLabelTemplate, 
     deleteLabelTemplate,
@@ -52,33 +51,6 @@ export async function createLabelTemplateAction(
         return {
             success: false,
             error: 'Не удалось создать шаблон этикетки'
-        }
-    }
-}
-
-/**
- * Получить шаблон этикетки по ID
- */
-export async function getLabelTemplateAction(templateId: string): Promise<ActionResult> {
-    try {
-        const template = await getLabelTemplateById(templateId)
-
-        if (!template) {
-            return {
-                success: false,
-                error: 'Шаблон этикетки не найден'
-            }
-        }
-
-        return {
-            success: true,
-            data: template
-        }
-    } catch (error) {
-        console.error('Ошибка при получении шаблона этикетки:', error)
-        return {
-            success: false,
-            error: 'Не удалось получить шаблон этикетки'
         }
     }
 }

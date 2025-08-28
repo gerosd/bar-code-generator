@@ -153,11 +153,6 @@ const Sidebar: React.FC<SidebarProps> = ({isInsideDrawer, closeDrawer}: SidebarP
                             <span>Готовые шаблоны</span>
                         </Link>
                     </li>
-                    <li className='px-4 pt-4 pb-2'>
-								<span className='text-xs font-semibold text-gray-500 uppercase dark:text-gray-400'>
-									Администрирование
-								</span>
-                    </li>
                     <li>
                         <Link
                             href='/product-database'

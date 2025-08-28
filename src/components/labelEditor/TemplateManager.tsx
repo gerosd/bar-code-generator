@@ -28,10 +28,10 @@ export default function TemplateManager({ onTemplateSelectAction }: TemplateMana
         try {
             setIsLoading(true)
             const result = await getUserLabelTemplatesAction()
-            
-            if (result.success && result.data) {
+            if (result.success && Array.isArray(result.data)) {
                 setTemplates(result.data)
             } else {
+                setTemplates([]) // сбрасываем шаблоны при ошибке
                 setMessage({ type: 'error', text: result.error || 'Ошибка загрузки шаблонов' })
             }
         } catch (error) {

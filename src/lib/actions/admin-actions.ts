@@ -9,8 +9,7 @@ import { logger } from '@/utils/logger'
 import { revalidatePath } from 'next/cache'
 
 /**
- * Получает список всех товаров (для админки).
- * Требует прав администратора.
+ * Получает список всех товаров
  * @returns Promise<{success: boolean; data?: ProductDatabaseView[]; error?: string}>
  */
 export const getAllProductsAction = async (): Promise<{
@@ -48,8 +47,7 @@ export const getAllProductsAction = async (): Promise<{
 }
 
 /**
- * Очищает весь список товаров (для админки).
- * Требует прав администратора.
+ * Очищает весь список товаров
  * @returns Promise<{ success: boolean; message?: string; deletedCount?: number; error?: string }>
  */
 export const deleteAllProductsAction = async (): Promise<{

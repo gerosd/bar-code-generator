@@ -70,7 +70,7 @@ async function fetchAndStoreSupplierCards(supplier: WorkerSupplierInfo) {
 }
 
 export async function runProductAggregationWorker() {
-    logger.info('Worker: запуск синхронизации карточек (без цен)')
+    logger.info('Worker: запуск синхронизации карточек')
     const activeSuppliers = await getAllActiveValidSuppliers()
 
     for (const s of activeSuppliers) {

@@ -73,7 +73,7 @@ export default function ServerTemplates() {
         const checkCustomTemplates = async () => {
             try {
                 const result = await getUserLabelTemplatesAction()
-                if (result.success && result.data) {
+                if (result.success && result.data && Array.isArray(result.data)) {
                     setHasCustomTemplates(result.data.length > 0)
                     // Если есть пользовательские шаблоны, получаем предпросмотр
                     if (result.data.length > 0) {

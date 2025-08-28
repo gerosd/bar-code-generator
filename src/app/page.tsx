@@ -194,10 +194,10 @@ export default async function Home() {
                     <div className="max-w-7xl mx-auto">
                         <div className="text-center mb-16">
                             <h2 className="text-4xl font-bold text-gray-100 mb-4">
-                                Административные функции
+                                Расширенные функции
                             </h2>
                             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-                                Расширенные возможности для администраторов системы
+                                Функции для работы с поставщиками и товарами
                             </p>
                         </div>
 
