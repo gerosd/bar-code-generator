@@ -1,7 +1,6 @@
 import { ThemeModeScript } from "flowbite-react";
 import type { Metadata } from "next";
 import { SessionProvider } from "@/components/providers/SessionProvider";
-import { ClientProvider } from "@/components/providers/ClientProvider";
 import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import {ToastContainer} from "@/components/ui/ToastContainer";
@@ -36,10 +35,8 @@ const RootLayout = ({
         <body className={`${roboto.variable} ${robotoMono.variable} antialiased bg-gray-900`}>
         <SessionProvider>
             <ToastProvider>
-                <ClientProvider>
-                    {children}
-                    <ToastContainer/>
-                </ClientProvider>
+                {children}
+                <ToastContainer/>
             </ToastProvider>
         </SessionProvider>
         </body>

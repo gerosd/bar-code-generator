@@ -1,4 +1,5 @@
-import type { PrintTemplate } from './client'
+// Типы шаблонов печати
+export type PrintTemplate = 'template1' | 'template2' | 'template3' | 'template4' | 'custom'
 
 export interface DataMatrixOptions {
     scale?: number;

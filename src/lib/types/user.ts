@@ -1,11 +1,5 @@
 // Типы для пользователей без зависимостей от MongoDB
 
-// Определяем доступные роли
-export enum UserRole {
-    USER = 'user',
-    ADMIN = 'admin'
-}
-
 export interface PrinterSettings {
     printerIP: string;
     printerPort: number;
@@ -29,20 +23,8 @@ export interface UserType {
     email?: string;
     password?: string; // Хэшированный пароль для credentials provider
     image?: string;
-    roles: UserRole[];
     authMethods: AuthMethod[];
-    availableClients?: string[]; // ID клиентов, в которых состоит пользователь
-    currentClientId?: string; // ID текущего выбранного клиента
     printerSettings?: PrinterSettings;
     createdAt: Date;
     updatedAt: Date;
-}
-
-// Типы для управления пользователями
-export interface UserFilter {
-    role?: UserRole
-    sortBy?: keyof UserType
-    sortOrder?: 'asc' | 'desc'
-    limit?: number
-    skip?: number
 }

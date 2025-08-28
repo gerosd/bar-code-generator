@@ -9,23 +9,8 @@ import {getServerSession, NextAuthOptions} from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcryptjs from "bcryptjs";
-import {
-    createClient as createClientDb,
-    getClientsByUserId,
-} from "./mongo/clients";
 import {getUserById, upsertUser} from "./mongo/users";
-import type {ClientType} from "./types/client";
-import {AuthMethod, UserRole} from "./types/user";
-
-// Функция проверки роли пользователя
-export const hasRole = async (
-    userId: string,
-    role: UserRole
-): Promise<boolean> => {
-    const user = await getUserById(userId);
-    if (!user) return false;
-    return user.roles?.includes(role) || false;
-};
+import {AuthMethod} from "./types/user";
 
 export const auth = (
     ...args:
@@ -43,17 +28,11 @@ declare module "next-auth" {
             name: string;
             image: string;
             email: string;
-            roles: UserRole[];
-            isAdmin: boolean;
-            availableClients: Pick<ClientType, "id" | "name">[];
         };
     }
 
     interface JWT {
         userId?: string;
-        roles?: UserRole[];
-        isAdmin?: boolean;
-        availableClients?: Pick<ClientType, "id" | "name">[];
         sub?: string;
         name?: string | null;
         email?: string | null;
@@ -210,20 +189,7 @@ export const authOptions: NextAuthOptions = {
                       trigger,
                       session: sessionUpdateData,
                       account,
-                      profile,
                   }) {
-            // logger.info('JWT Callback: Start', {
-            // 	metadata: {
-            // 		trigger,
-            // 		hasUser: !!user,
-            // 		hasAccount: !!account,
-            // 		hasProfile: !!profile,
-            // 		initialTokenAvailableClientsCount: Array.isArray(token.availableClients)
-            // 			? token.availableClients.length
-            // 			: 0,
-            // 		sessionUpdateData,
-            // 	},
-            // })
 
             const isLoginEvent = !!user;
 
@@ -235,27 +201,8 @@ export const authOptions: NextAuthOptions = {
                 if (typeof sessionUpdateData.email === 'string') {
                     token.email = sessionUpdateData.email;
                 }
-                if (typeof (sessionUpdateData as any).image === 'string') {
-                    token.picture = (sessionUpdateData as any).image;
-                }
-
-                // Специальный флаг для принудительного обновления доступных клиентов в токене
-                if ((sessionUpdateData as any).refreshAvailableClients) {
-                    const userIdFromToken =
-                        typeof token.userId === 'string'
-                            ? token.userId
-                            : typeof token.sub === 'string'
-                                ? token.sub
-                                : undefined;
-                    if (userIdFromToken) {
-                        try {
-                            const refreshedClients = await getClientsByUserId(userIdFromToken);
-                            token.availableClients = refreshedClients.map((c) => ({ id: c.id, name: c.name }));
-                        } catch (e) {
-                            // в случае ошибки просто оставляем существующее значение
-                            logger.auth('JWT Callback: Ошибка при обновлении availableClients по флагу refreshAvailableClients', { metadata: { error: e } });
-                        }
-                    }
+                if (typeof (sessionUpdateData as { image?: string }).image === 'string') {
+                    token.picture = (sessionUpdateData as { image?: string }).image;
                 }
             }
 
@@ -277,9 +224,6 @@ export const authOptions: NextAuthOptions = {
 
                 const dbUser = await getUserById(user.id);
                 if (dbUser) {
-                    token.roles = dbUser.roles || [UserRole.USER];
-                    token.isAdmin = dbUser.roles?.includes(UserRole.ADMIN) || false;
-
                     // Обновление методов авторизации
                     const existingAuthMethod = dbUser.authMethods?.find(
                         (method: AuthMethod) =>
@@ -316,7 +260,6 @@ export const authOptions: NextAuthOptions = {
                             authMethod.provider !== "telegram" ? firstName : undefined,
                         email: user.email ?? undefined,
                         image: user.image ?? undefined,
-                        roles: [UserRole.USER],
                         authMethods: [
                             {
                                 ...authMethod,
@@ -324,34 +267,9 @@ export const authOptions: NextAuthOptions = {
                             } as AuthMethod,
                         ],
                     });
-                    token.roles = [UserRole.USER];
-                    token.isAdmin = false;
                 }
-
-                let clients = await getClientsByUserId(user.id);
-                if (clients.length === 0) {
-                    const clientName = user.name ? `${user.name} shop` : "Мой магазин";
-                    const newClient = await createClientDb(clientName, user.id);
-                    if (newClient) {
-                        clients = [newClient];
-                    }
-                }
-                token.availableClients = clients.map((c) => ({
-                    id: c.id,
-                    name: c.name,
-                }));
-                // logger.info('JWT Callback (login): availableClients установлен', {
-                // 	metadata: { count: Array.isArray(token.availableClients) ? token.availableClients.length : 0 },
-                // })
             }
 
-            // logger.info('JWT Callback: End', {
-            // 	metadata: {
-            // 		finalTokenAvailableClientsCount: Array.isArray(token.availableClients)
-            // 			? token.availableClients.length
-            // 			: 0,
-            // 	},
-            // })
             return token;
         },
 
@@ -366,14 +284,6 @@ export const authOptions: NextAuthOptions = {
             session.user.name = typeof token.name === "string" ? token.name : "";
             session.user.image =
                 typeof token.picture === "string" ? token.picture : "";
-            session.user.roles = Array.isArray(token.roles)
-                ? token.roles
-                : [UserRole.USER];
-            session.user.isAdmin =
-                typeof token.isAdmin === "boolean" ? token.isAdmin : false;
-            session.user.availableClients = Array.isArray(token.availableClients)
-                ? token.availableClients
-                : [];
 
             return session;
         },

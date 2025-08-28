@@ -96,8 +96,8 @@ const DocsPage = () => {
                                 Пошаговое руководство
                             </h3>
                             <ol className="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-400">
-                                <li>Перейдите в раздел "Генерация этикеток"</li>
-                                <li>Выберите режим работы: "Сканирование DataMatrix" или "Ручной выбор товара"</li>
+                                <li>Перейдите в раздел &quot;Генерация этикеток&quot;</li>
+                                <li>Выберите режим работы: &quot;Сканирование DataMatrix&quot; или &quot;Ручной выбор товара&quot;</li>
                                 <li>Укажите количество печатаемых DataMatrix и штрих-кодов</li>
                                 <li>
                                     <strong>Для автоматического режима:</strong> отсканируйте DataMatrix код
@@ -146,8 +146,8 @@ const DocsPage = () => {
                                 Создание нового клиента
                             </h3>
                             <ol className="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-400">
-                                <li>Перейдите в раздел "Управление клиентами"</li>
-                                <li>Нажмите "Добавить клиента"</li>
+                                <li>Перейдите в раздел &quot;Управление клиентами&quot;</li>
+                                <li>Нажмите &quot;Добавить клиента&quot;</li>
                                 <li>Заполните обязательные поля</li>
                                 <li>Настройте параметры доступа</li>
                                 <li>Сохраните клиента</li>
@@ -182,8 +182,8 @@ const DocsPage = () => {
                                 Добавление поставщика
                             </h3>
                             <ol className="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-400">
-                                <li>Перейдите в раздел "Поставщики"</li>
-                                <li>Нажмите "Добавить поставщика"</li>
+                                <li>Перейдите в раздел &quot;Поставщики&quot;</li>
+                                <li>Нажмите &quot;Добавить поставщика&quot;</li>
                                 <li>Настройте API ключи для интеграции</li>
                                 <li>Сохраните настройки</li>
                             </ol>
@@ -321,7 +321,7 @@ const DocsPage = () => {
                             </p>
                             <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
                                 <li>Обратитесь к администратору системы</li>
-                                <li>Проверьте раздел "История сканирования" для диагностики</li>
+                                <li>Проверьте раздел &quot;История сканирования&quot; для диагностики</li>
                                 <li>Обратитесь в службу поддержки</li>
                             </ul>
                         </div>

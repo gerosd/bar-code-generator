@@ -43,7 +43,7 @@ export interface LabelSize {
  */
 export interface LabelTemplate {
     id: string
-    clientId: string
+    userId: string
     name: string
     description?: string
     elements: LabelElement[]
@@ -57,7 +57,7 @@ export interface LabelTemplate {
  */
 export interface LabelTemplateDocument {
     _id: ObjectId
-    clientId: string
+    userId: string
     name: string
     description?: string
     elements: LabelElement[]
@@ -70,7 +70,7 @@ export interface LabelTemplateDocument {
  * Данные для создания нового шаблона
  */
 export interface CreateLabelTemplateData {
-    clientId: string
+    userId: string
     name: string
     description?: string
     elements: LabelElement[]

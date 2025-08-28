@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse} from "next/server";
 import { getPreviewByZPL, generateZPLFromTemplate } from "@/lib/actions/preview-actions";
-import { getClientLabelTemplatesAction } from "@/lib/actions/labelTemplate-actions";
+import { getUserLabelTemplatesAction } from "@/lib/actions/labelTemplate-actions";
 import type { LabelTemplate } from "@/lib/types/labelEditor";
 
 export async function POST(req: NextRequest) {
@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
             const dpi = body.dpi;
             
             // Если запрошен пользовательский шаблон, получаем его из базы данных
-            if (body.template === 'custom' && body.clientId) {
-                const result = await getClientLabelTemplatesAction(body.clientId);
+            if (body.template === 'custom') {
+                const result = await getUserLabelTemplatesAction();
                 if (!result.success || !result.data || result.data.length === 0) {
                     return NextResponse.json({
                         success: false,

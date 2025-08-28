@@ -1,18 +1,17 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {findProductByBarcode} from '@/lib/mongo/dynamicWBData';
 import {findScanByCode, recordScan} from '@/lib/mongo/scanHistory';
-import {getClientById} from '@/lib/mongo/clients';
-import { getLabelTemplateById } from "@/lib/mongo/labelTemplates";
 import net from 'net';
 import {PrintData} from "@/lib/types/generation";
-import type { LabelElement } from "@/lib/types/labelEditor";
+import type { LabelElement, LabelTemplate } from "@/lib/types/labelEditor";
 import { generateZPLBarcode, getLabelDimensions, generateZPLWithLabelSize } from '@/lib/utils/barcodeExtract';
 import { getUserById } from '@/lib/mongo/users';
 import { getUserIdFromSession } from '@/lib/actions/utils';
+import { getLabelTemplatesByUser } from '@/lib/mongo/labelTemplates';
 
 
 // Функция для генерации ZPL кода из пользовательского шаблона
-function generateZPLFromCustomTemplate(elements: LabelElement[], data: any): string {
+function generateZPLFromCustomTemplate(elements: LabelElement[], data: PrintData): string {
     let zplCommands = '^CI28\n'; // ^XA будет добавлен в generateZPLWithLabelSize
 
     for (const element of elements) {
@@ -57,7 +56,7 @@ function generateZPLFromCustomTemplate(elements: LabelElement[], data: any): str
 }
 
 // Функция для получения ZPL кода по шаблону
-function getZPLByTemplate(template: string, data: any): string {
+function getZPLByTemplate(template: string, data: PrintData): string {
     let zplContent: string;
     
     switch (template) {
@@ -111,7 +110,7 @@ function getZPLByTemplate(template: string, data: any): string {
 export async function POST(request: NextRequest) {
     try {
         const body: PrintData = await request.json();
-        let {scannedData, selectedTemplate} = body;
+        const {scannedData, selectedTemplate} = body;
         const {productName, productSize, nmId, vendorCode, dataMatrixCount, barcodeAmount, diffEAN13} = body;
         const userId = await getUserIdFromSession();
         const user = await getUserById(userId);
@@ -129,38 +128,21 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Получаем текущий клиент из cookie для определения шаблона
-        const cookieStore = await import('next/headers').then(m => m.cookies());
-        const currentClientId = cookieStore.get('currentClientId')?.value;
         
-        let templateToUse = selectedTemplate || 'template1'; // По умолчанию template1
+        const templateToUse = selectedTemplate || 'template1'; // По умолчанию template1
         
-        let customTemplate = null;
-        
-        if (currentClientId && !selectedTemplate) {
-            // Если шаблон не указан, получаем из настроек клиента
-            const client = await getClientById(currentClientId);
-            if (client?.selectedPrintTemplate) {
-                templateToUse = client.selectedPrintTemplate;
-                
-                // Если выбран пользовательский шаблон, загружаем его
-                if (templateToUse === 'custom' && client.customLabelTemplateId) {
-                    customTemplate = await getLabelTemplateById(client.customLabelTemplateId);
-                    console.log('Loaded custom template:', customTemplate?.name);
-                }
+        // Получаем пользовательский шаблон, если он выбран
+        let customTemplate: LabelTemplate | null = null;
+        if (templateToUse === 'custom') {
+            try {
+                const userTemplates = await getLabelTemplatesByUser(userId);
+                customTemplate = userTemplates.length > 0 ? userTemplates[0] : null;
+            } catch (error) {
+                console.error('Ошибка получения пользовательского шаблона:', error);
             }
         }
         
         const barcode = generateZPLBarcode(scannedData);
-        console.log("Сгенерированный ZPL: ", barcode);
-        console.log("Параметры печати:", {
-            diffEAN13,
-            productName,
-            nmId,
-            vendorCode,
-            barcodeAmount,
-            dataMatrixCount
-        });
 
         // Записываем факт сканирования DataMatrix для истории
         // и используем для контроля повторного ввода на клиенте через отдельный API GET (см. Ниже)
@@ -314,8 +296,8 @@ export async function GET(request: NextRequest) {
             }
             // Найти размер, соответствующий штрихкоду
             let productSize = '';
-            let nmId = product.nmId;
-            let vendorCode = product.vendorCode;
+            const nmId = product.nmId;
+            const vendorCode = product.vendorCode;
             const sizeObj = product.sizes?.find(size => size.skus?.includes(barcode));
             if (sizeObj) {
                 productSize = sizeObj.wbSize || sizeObj.techSize || '';

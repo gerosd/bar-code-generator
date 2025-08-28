@@ -18,27 +18,7 @@ export const getUserIdFromSession = async (): Promise<string> => {
 	return session.user.id
 }
 
-/**
- * Получает ID текущего выбранного клиента из cookie
- * @returns ID клиента или undefined, если cookie не установлен
- */
-export const getCurrentClientId = async (): Promise<string | undefined> => {
-	const session = await getServerSession(authOptions)
-	if (!session?.user?.id) {
-		logger.warn('getCurrentClientId: Попытка получить ID клиента без активной сессии.')
-		return undefined
-	}
-
-	const cookieStore = await cookies()
-	const clientIdFromCookie = cookieStore.get('currentClientId')?.value
-
-	if (clientIdFromCookie) {
-		return clientIdFromCookie
-	}
-
-	logger.info('getCurrentClientId: Cookie currentClientId не найден.')
-	return undefined
-}
+// Функция getCurrentClientId удалена - теперь используем напрямую getUserIdFromSession
 
 /**
  * Получает ID текущего авторизованного пользователя из сессии.

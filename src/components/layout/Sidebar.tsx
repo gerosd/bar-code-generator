@@ -1,19 +1,18 @@
 'use client'
 
-import { signOut } from 'next-auth/react'
+import {signOut} from 'next-auth/react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { FaBoxOpen, FaBuilding, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUsers, FaUser, FaBook, FaEdit } from 'react-icons/fa'
+import {usePathname} from 'next/navigation'
+import {FaBoxOpen, FaHome, FaQrcode, FaSignOutAlt, FaStore, FaTimes, FaUser, FaBook, FaEdit} from 'react-icons/fa'
 import {GoProjectTemplate} from "react-icons/go";
+import React from "react";
 
 interface SidebarProps {
-    isAdmin: boolean
-    isClientAdmin: boolean
     isInsideDrawer?: boolean
     closeDrawer?: () => void
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isInsideDrawer, closeDrawer }: SidebarProps) => {
+const Sidebar: React.FC<SidebarProps> = ({isInsideDrawer, closeDrawer}: SidebarProps) => {
     const pathname = usePathname();
 
     const isActive = (path: string) => {
@@ -82,21 +81,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isInsideDrawer, closeDrawer 
 
                     <li>
                         <Link
-                            href='/clients'
-                            onClick={handleLinkClick}
-                            className={`flex items-center p-3 text-base rounded-lg transition-colors ${
-                                isActive('/clients')
-                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                                    : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            }`}
-                        >
-                            <FaBuilding className='w-5 h-5 mr-3'/>
-                            <span>Управление клиентами</span>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link
                             href="/generate"
                             onClick={handleLinkClick}
                             className={`flex items-center p-3 text-base rounded-lg transition-colors ${
@@ -120,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isInsideDrawer, closeDrawer 
                                     : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                         >
-                            <FaUser className='w-5 h-5 mr-3' />
+                            <FaUser className='w-5 h-5 mr-3'/>
                             <span>Профиль</span>
                         </Link>
                     </li>
@@ -135,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isInsideDrawer, closeDrawer 
                                     : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                         >
-                            <FaBook className='w-5 h-5 mr-3' />
+                            <FaBook className='w-5 h-5 mr-3'/>
                             <span>Документация</span>
                         </Link>
                     </li>
@@ -150,76 +134,58 @@ const Sidebar: React.FC<SidebarProps> = ({ isAdmin, isInsideDrawer, closeDrawer 
                                     : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                         >
-                            <FaEdit className='w-5 h-5 mr-3' />
+                            <FaEdit className='w-5 h-5 mr-3'/>
                             <span>Редактор этикеток</span>
                         </Link>
                     </li>
 
-                    {isAdmin && (
-                        <>
-                            <li>
-                                <Link
-                                    href="/templates"
-                                    onClick={handleLinkClick}
-                                    className={`flex items-center p-3 text-base rounded-lg transition-colors ${
-                                        isActive('/templates')
-                                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                                        : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                    }`}
-                                    >
-                                    <GoProjectTemplate className='w-5 h-5 mr-3' />
-                                    <span>Готовые шаблоны</span>
-                                </Link>
-                            </li>
-                            <li className='px-4 pt-4 pb-2'>
+                    <li>
+                        <Link
+                            href="/templates"
+                            onClick={handleLinkClick}
+                            className={`flex items-center p-3 text-base rounded-lg transition-colors ${
+                                isActive('/templates')
+                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                                    : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            <GoProjectTemplate className='w-5 h-5 mr-3'/>
+                            <span>Готовые шаблоны</span>
+                        </Link>
+                    </li>
+                    <li className='px-4 pt-4 pb-2'>
 								<span className='text-xs font-semibold text-gray-500 uppercase dark:text-gray-400'>
 									Администрирование
 								</span>
-                            </li>
-                            <li>
-                                <Link
-                                    href='/admin/product-database'
-                                    onClick={handleLinkClick}
-                                    className={`flex items-center p-3 text-base rounded-lg transition-colors ${
-                                        isActive('/admin/product-database')
-                                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                                            : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                    }`}
-                                >
-                                    <FaBoxOpen className='w-5 h-5 mr-3'/>
-                                    <span>База товаров</span>
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    href='/admin/all-clients'
-                                    onClick={handleLinkClick}
-                                    className={`flex items-center p-3 text-base rounded-lg transition-colors ${
-                                        isActive('/admin/all-clients')
-                                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                                            : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                    }`}
-                                >
-                                    <FaUsers className='w-5 h-5 mr-3'/>
-                                    <span>Все клиенты</span>
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    href='/admin/wb-suppliers'
-                                    onClick={handleLinkClick}
-                                    className={`flex items-center p-3 text-base rounded-lg transition-colors ${
-                                        isActive('/admin/wb-suppliers')
-                                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
-                                            : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                    }`}
-                                >
-                                    <FaStore className='w-5 h-5 mr-3'/>
-                                    <span>Поставщики WB</span>
-                                </Link>
-                            </li>
-                        </>
-                    )}
+                    </li>
+                    <li>
+                        <Link
+                            href='/product-database'
+                            onClick={handleLinkClick}
+                            className={`flex items-center p-3 text-base rounded-lg transition-colors ${
+                                isActive('/product-database')
+                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                                    : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            <FaBoxOpen className='w-5 h-5 mr-3'/>
+                            <span>База товаров</span>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link
+                            href='/wb-suppliers'
+                            onClick={handleLinkClick}
+                            className={`flex items-center p-3 text-base rounded-lg transition-colors ${
+                                isActive('/wb-suppliers')
+                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                                    : 'text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            <FaStore className='w-5 h-5 mr-3'/>
+                            <span>Поставщики WB</span>
+                        </Link>
+                    </li>
                 </ul>
             </nav>
 

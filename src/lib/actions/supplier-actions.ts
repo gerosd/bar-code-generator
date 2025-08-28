@@ -1,12 +1,11 @@
 'use server'
 
 import { WildberriesAPI } from '@/lib/api/wildberries'
-import { getMemberRole } from '@/lib/mongo/clients'
 import {
-	createSupplierForClient,
+	createSupplierForUser,
 	deleteSupplier,
 	getSupplierById,
-	getSuppliersByClientId,
+	getSuppliersByUserId,
 	getSupplierTotalProducts,
 	updateSupplier,
 	updateSupplierTotalProducts,
@@ -14,7 +13,7 @@ import {
 import { SupplierData, SupplierFormData, SupplierTokenInfo, ValidateApiKeyResult } from '@/lib/types/supplier'
 import { endMeasure, logger, measureAsync, startMeasure } from '@/utils/logger'
 import { revalidatePath } from 'next/cache'
-import { getCurrentClientId, getUserIdFromSession, maskToken, validateWildberriesApiKey } from './utils'
+import { getUserIdFromSession, maskToken, validateWildberriesApiKey } from './utils'
 import { bulkUpsertWbSuppliers }  from '@/lib/mongo/wbSuppliers';
 
 /**
@@ -28,23 +27,17 @@ export const validateApiKey = async (formData: SupplierFormData): Promise<Valida
 }
 
 /**
- * Получение списка поставщиков клиента
+ * Получение списка поставщиков пользователя
  * @returns Список поставщиков
  */
 export const getSuppliers = async (): Promise<SupplierData[]> => {
 	const metricId = startMeasure('getSuppliers')
 
 	try {
-		const clientId = await measureAsync(() => getCurrentClientId(), 'getCurrentClientId:getSuppliers')
+		const userId = await measureAsync(() => getUserIdFromSession(), 'getUserIdFromSession:getSuppliers')
 
-		if (!clientId) {
-			logger.warn('getSuppliers: ClientId is not defined. Returning empty list.')
-			endMeasure(metricId, { result: 'empty', reason: 'no_client_id' })
-			return []
-		}
-
-		const suppliers = await measureAsync(() => getSuppliersByClientId(clientId), 'getSuppliersByClientId', {
-			clientId,
+		const suppliers = await measureAsync(() => getSuppliersByUserId(userId), 'getSuppliersByUserId', {
+			userId,
 		})
 
 		const result = []
@@ -64,7 +57,7 @@ export const getSuppliers = async (): Promise<SupplierData[]> => {
 
 		endMeasure(metricId, {
 			suppliersCount: result.length,
-			clientId,
+			userId,
 		})
 
 		return result
@@ -83,13 +76,7 @@ export const getSuppliers = async (): Promise<SupplierData[]> => {
  * @returns Созданный поставщик
  */
 export const createSupplierKey = async (formData: SupplierFormData): Promise<SupplierData> => {
-	await getUserIdFromSession() // userId для логов или будущих проверок, если нужны
-	const clientId = await getCurrentClientId()
-
-	if (!clientId) {
-		logger.error('createSupplierKey: ClientId is not defined. Cannot create supplier.')
-		throw new Error('Не удалось определить клиента для создания поставщика.')
-	}
+	const userId = await getUserIdFromSession() // ID пользователя для создания поставщика
 
 	const { name, key } = formData
 	const validationResult = await validateWildberriesApiKey(key)
@@ -130,8 +117,8 @@ export const createSupplierKey = async (formData: SupplierFormData): Promise<Sup
 		accessCategories: [],
 	}
 
-	const supplier = await createSupplierForClient({
-		clientId, // clientId теперь точно string
+	const supplier = await createSupplierForUser({
+		userId, // ID пользователя
 		name,
 		key,
 		isValid: validationResult.valid,
@@ -167,32 +154,20 @@ export const createSupplierKey = async (formData: SupplierFormData): Promise<Sup
  */
 export const deleteSupplierKey = async (id: string): Promise<{ success: boolean }> => {
 	const userId = await getUserIdFromSession()
-	const clientId = await getCurrentClientId()
-
-	if (!clientId) {
-		logger.error('deleteSupplierKey: ClientId is not defined. Cannot delete supplier.')
-		throw new Error('Не удалось определить клиента для удаления поставщика.')
-	}
 
 	try {
-		// Проверка, что поставщик принадлежит клиенту
+		// Проверка, что поставщик принадлежит пользователю
 		const supplier = await getSupplierById(id)
 
-		if (!supplier || supplier.clientId !== clientId) {
+		if (!supplier || supplier.userId !== userId) {
 			throw new Error('Поставщик не найден или у вас нет прав на его удаление')
-		}
-
-		// Проверка роли пользователя в клиенте
-		const memberRole = await getMemberRole(clientId, userId)
-		if (!memberRole || memberRole !== 'admin') {
-			throw new Error('Только администраторы могут удалять поставщиков')
 		}
 
 		const result = await deleteSupplier(id)
 		revalidatePath('/suppliers')
 		return { success: result }
 	} catch (error) {
-		logger.error('Ошибка при удалении поставщика:', { metadata: { error, supplierId: id, clientId } })
+		logger.error('Ошибка при удалении поставщика:', { metadata: { error, supplierId: id, userId } })
 		throw error
 	}
 }
@@ -204,24 +179,12 @@ export const deleteSupplierKey = async (id: string): Promise<{ success: boolean 
  */
 export const updateSupplierKey = async ({ id, key }: { id: string; key: string }): Promise<SupplierData> => {
 	const userId = await getUserIdFromSession()
-	const clientId = await getCurrentClientId()
 
-	if (!clientId) {
-		logger.error('updateSupplierKey: ClientId is not defined. Cannot update supplier.')
-		throw new Error('Не удалось определить клиента для обновления поставщика.')
-	}
-
-	// Проверка, что поставщик принадлежит клиенту
+	// Проверка, что поставщик принадлежит пользователю
 	const supplier = await getSupplierById(id)
 
-	if (!supplier || supplier.clientId !== clientId) {
+	if (!supplier || supplier.userId !== userId) {
 		throw new Error('Поставщик не найден или у вас нет прав на его обновление')
-	}
-
-	// Проверка роли пользователя в клиенте
-	const memberRole = await getMemberRole(clientId, userId)
-	if (!memberRole || memberRole !== 'admin') {
-		throw new Error('Только администраторы могут обновлять поставщиков')
 	}
 
 	// Валидация ключа
@@ -301,26 +264,21 @@ export const updateSupplierKey = async ({ id, key }: { id: string; key: string }
 
 /**
  * Получение API-ключа поставщика (только для серверного использования внутри других actions).
- * Включает проверку принадлежности поставщика текущему клиенту.
+ * Включает проверку принадлежности поставщика текущему пользователю.
  * @param supplierId ID поставщика
- * @returns API-ключ или null, если поставщик не найден или не принадлежит клиенту.
+ * @returns API-ключ или null, если поставщик не найден или не принадлежит пользователю.
  */
 export const getSupplierApiKeyAction = async (supplierId: string): Promise<string | null> => {
-	const clientId = await getCurrentClientId()
-
-	if (!clientId) {
-		logger.warn(`getSupplierApiKeyAction: ClientId is not defined. Cannot get API key for supplier ${supplierId}.`)
-		return null
-	}
+	const userId = await getUserIdFromSession()
 
 	try {
 		// Получаем поставщика
 		const supplier = await getSupplierById(supplierId)
 
-		// Проверяем, что поставщик существует и принадлежит клиенту
-		if (!supplier || supplier.clientId !== clientId) {
+		// Проверяем, что поставщик существует и принадлежит пользователю
+		if (!supplier || supplier.userId !== userId) {
 			logger.warn(
-				`getSupplierApiKeyAction: Supplier ${supplierId} not found or does not belong to client ${clientId}.`
+				`getSupplierApiKeyAction: Supplier ${supplierId} not found or does not belong to user ${userId}.`
 			)
 			return null
 		}
@@ -328,14 +286,14 @@ export const getSupplierApiKeyAction = async (supplierId: string): Promise<strin
 		// Возвращаем API-ключ
 		return supplier.key
 	} catch (error) {
-		logger.error(`Ошибка при получении API-ключа для поставщика ${supplierId}:`, { metadata: { error, clientId } })
+		logger.error(`Ошибка при получении API-ключа для поставщика ${supplierId}:`, { metadata: { error, userId } })
 		return null
 	}
 }
 
 /**
  * Получение API-ключей для нескольких поставщиков.
- * Фильтрует только те поставщики, которые принадлежат текущему клиенту.
+ * Фильтрует только те поставщики, которые принадлежат текущему пользователю.
  * @param supplierIds Массив ID поставщиков
  * @returns Map с ключами в формате { [supplierId]: apiKey }
  */
@@ -343,13 +301,7 @@ export const getSupplierApiKeysAction = async (supplierIds: string[]): Promise<M
 	const metricId = startMeasure('getSupplierApiKeysAction')
 	const result = new Map<string, string>()
 
-	const clientId = await measureAsync(() => getCurrentClientId(), 'getCurrentClientId:getSupplierApiKeysAction')
-
-	if (!clientId) {
-		logger.warn('getSupplierApiKeysAction: ClientId is not defined. Returning empty map.')
-		endMeasure(metricId, { result: 'empty', reason: 'no_client_id' })
-		return result
-	}
+	const userId = await measureAsync(() => getUserIdFromSession(), 'getUserIdFromSession:getSupplierApiKeysAction')
 
 	if (!supplierIds || supplierIds.length === 0) {
 		endMeasure(metricId, { result: 'empty', reason: 'no_supplier_ids' })
@@ -357,41 +309,41 @@ export const getSupplierApiKeysAction = async (supplierIds: string[]): Promise<M
 	}
 
 	try {
-		// Получаем всех поставщиков клиента один раз
-		const clientSuppliers = await measureAsync(
-			() => getSuppliersByClientId(clientId),
-			'getSuppliersByClientId:batch',
-			{ clientId }
+		// Получаем всех поставщиков пользователя один раз
+		const userSuppliers = await measureAsync(
+			() => getSuppliersByUserId(userId),
+			'getSuppliersByUserId:batch',
+			{ userId }
 		)
 
-		const clientSuppliersMap = new Map(
-			clientSuppliers
+		const userSuppliersMap = new Map(
+			userSuppliers
 				.filter((s) => s._id) // Убираем поставщиков без _id
 				.map((s) => [s._id!.toString(), s]) // Теперь s._id точно существует
 		)
 
 		for (const supplierId of supplierIds) {
-			const supplier = clientSuppliersMap.get(supplierId)
+			const supplier = userSuppliersMap.get(supplierId)
 			if (supplier) {
 				// Проверка isValid здесь не обязательна, т.к. ключ может быть нужен для валидации
 				result.set(supplierId, supplier.key)
 			} else {
 				logger.warn(
-					`getSupplierApiKeysAction: Supplier ${supplierId} not found for client ${clientId} or doesn\'t belong to this client.`
+					`getSupplierApiKeysAction: Supplier ${supplierId} not found for user ${userId} or doesn\'t belong to this user.`
 				)
 			}
 		}
 		endMeasure(metricId, {
 			requestedCount: supplierIds.length,
 			foundCount: result.size,
-			clientId,
+			userId,
 		})
 	} catch (error) {
 		endMeasure(metricId, {
 			error: error instanceof Error ? error.message : String(error),
-			clientId,
+			userId,
 		})
-		logger.error('Error in getSupplierApiKeysAction:', { metadata: { error, clientId } })
+		logger.error('Error in getSupplierApiKeysAction:', { metadata: { error, userId } })
 		// В случае ошибки возвращаем то, что успели собрать, или пустую карту
 	}
 	return result
@@ -407,21 +359,14 @@ export const updateSupplierTotalProductsAction = async (
 	supplierId: string,
 	totalProducts: number
 ): Promise<boolean> => {
-	const clientId = await getCurrentClientId()
-
-	if (!clientId) {
-		logger.warn(
-			`updateSupplierTotalProductsAction: ClientId is not defined. Cannot update total products for supplier ${supplierId}.`
-		)
-		return false
-	}
+	const userId = await getUserIdFromSession()
 
 	try {
-		// Сначала убедимся, что поставщик принадлежит этому клиенту
+		// Сначала убедимся, что поставщик принадлежит этому пользователю
 		const supplier = await getSupplierById(supplierId)
-		if (!supplier || supplier.clientId !== clientId) {
+		if (!supplier || supplier.userId !== userId) {
 			logger.warn(
-				`updateSupplierTotalProductsAction: Supplier ${supplierId} not found or does not belong to client ${clientId}.`
+				`updateSupplierTotalProductsAction: Supplier ${supplierId} not found or does not belong to user ${userId}.`
 			)
 			return false
 		}
@@ -429,7 +374,7 @@ export const updateSupplierTotalProductsAction = async (
 		return await updateSupplierTotalProducts(supplierId, totalProducts)
 	} catch (error) {
 		logger.error(
-			`Error updating total products for supplier ${supplierId} for client ${clientId}: ${
+			`Error updating total products for supplier ${supplierId} for user ${userId}: ${
 				error instanceof Error ? error.message : 'Unknown error'
 			}`,
 			{ metadata: { error } }
@@ -444,21 +389,14 @@ export const updateSupplierTotalProductsAction = async (
  * @returns Количество товаров или null
  */
 export const getSupplierTotalProductsAction = async (supplierId: string): Promise<number | null> => {
-	const clientId = await getCurrentClientId()
-
-	if (!clientId) {
-		logger.warn(
-			`getSupplierTotalProductsAction: ClientId is not defined. Cannot get total products for supplier ${supplierId}.`
-		)
-		return null
-	}
+	const userId = await getUserIdFromSession()
 
 	try {
-		// Сначала убедимся, что поставщик принадлежит этому клиенту
+		// Сначала убедимся, что поставщик принадлежит этому пользователю
 		const supplier = await getSupplierById(supplierId)
-		if (!supplier || supplier.clientId !== clientId) {
+		if (!supplier || supplier.userId !== userId) {
 			logger.warn(
-				`getSupplierTotalProductsAction: Supplier ${supplierId} not found or does not belong to client ${clientId}.`
+				`getSupplierTotalProductsAction: Supplier ${supplierId} not found or does not belong to user ${userId}.`
 			)
 			return null
 		}
@@ -466,7 +404,7 @@ export const getSupplierTotalProductsAction = async (supplierId: string): Promis
 		return await getSupplierTotalProducts(supplierId)
 	} catch (error) {
 		logger.error(
-			`Error fetching total products for supplier ${supplierId} for client ${clientId}: ${
+			`Error fetching total products for supplier ${supplierId} for user ${userId}: ${
 				error instanceof Error ? error.message : 'Unknown error'
 			}`,
 			{ metadata: { error } }
@@ -476,16 +414,13 @@ export const getSupplierTotalProductsAction = async (supplierId: string): Promis
 }
 
 /**
- * Получение списка поставщиков клиента для использования в фильтрах.
+ * Получение списка поставщиков пользователя для использования в фильтрах.
  * Возвращает только ID и имя.
  */
 export const getSuppliersForFilter = async (): Promise<{ id: string; name: string }[]> => {
 	try {
-		const clientId = await getCurrentClientId()
-		if (!clientId) {
-			return []
-		}
-		const suppliers = await getSuppliersByClientId(clientId)
+		const userId = await getUserIdFromSession()
+		const suppliers = await getSuppliersByUserId(userId)
 		return suppliers.map((s) => ({
 			id: s.legacySupplierId?.toString() || '', // Используем legacySupplierId, так как он нужен для фильтрации товаров
 			name: s.name,

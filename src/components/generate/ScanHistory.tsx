@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 
 type Item = {
     code: string
@@ -22,7 +22,7 @@ export default function ScanHistory({ dataMatrixCount, barcodeAmount }: ScanHist
     const [currentOffset, setCurrentOffset] = useState(0)
     const [totalCount, setTotalCount] = useState(0)
 
-    const load = async (reset = false) => {
+    const load = useCallback(async (reset = false) => {
         if (reset) {
             setLoading(true)
             setCurrentOffset(0)
@@ -50,7 +50,7 @@ export default function ScanHistory({ dataMatrixCount, barcodeAmount }: ScanHist
             setLoading(false)
             setLoadingMore(false)
         }
-    }
+    }, [currentOffset]);
 
     const loadMore = () => {
         if (!loadingMore && hasMore) {
@@ -58,9 +58,14 @@ export default function ScanHistory({ dataMatrixCount, barcodeAmount }: ScanHist
         }
     }
 
+    const latestLoad = useRef(load);
     useEffect(() => {
-        load(true);
-        const id = setInterval(() => load(true), 10000)
+        latestLoad.current = load;
+    }, [load]);
+
+    useEffect(() => {
+        latestLoad.current(true);
+        const id = setInterval(() => latestLoad.current(true), 10000)
         return () => clearInterval(id)
     }, [])
 

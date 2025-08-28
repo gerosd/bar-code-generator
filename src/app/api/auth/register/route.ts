@@ -1,7 +1,6 @@
 import {NextResponse} from "next/server";
 import bcryptjs from "bcryptjs";
 import {getUserById, upsertUser} from "@/lib/mongo/users";
-import {UserRole} from "@/lib/types/user";
 import {generateVerificationToken, sendVerificationEmail} from "@/lib/email";
 
 export async function POST(req: Request) {
@@ -34,7 +33,6 @@ export async function POST(req: Request) {
             email,
             password: hashedPassword,
             first_name: "",
-            roles: [UserRole.USER],
             authMethods: [
                 {
                     provider: "credentials",

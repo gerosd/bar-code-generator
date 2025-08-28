@@ -1,6 +1,6 @@
 'use client'
 
-import React, {useState, useEffect, useRef, useCallback} from 'react';
+import React, {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import type { ProductDatabaseView } from '@/lib/types/product';
 import { extractBarcode } from '@/lib/utils/barcodeExtract';
 
@@ -9,6 +9,18 @@ interface CreateDuplicateWindowProps {
     setDataMatrixCountAction: (count: number) => void;
     barcodeAmount: number;
     setBarcodeAmountAction: (amount: number) => void;
+}
+
+interface PrintData {
+    scannedData: string;
+    productName?: string;
+    productSize?: string;
+    nmId?: string;
+    vendorCode?: string;
+    dataMatrixCount?: number;
+    barcodeAmount?: number;
+    diffEAN13?: string;
+    selectedTemplate?: string;
 }
 
 export default function CreateDuplicateWindow({ 
@@ -37,67 +49,6 @@ export default function CreateDuplicateWindow({
     const productInputRef = useRef<HTMLInputElement>(null);
     const keySequenceRef = useRef<string>('');
     const keyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    useEffect(() => {
-        const handleGlobalKeyDown = (e: KeyboardEvent) => {
-            // Если открыто модальное окно, не обрабатываем глобальные события
-            if (confirmOpen) {
-                return;
-            }
-            
-            // Сбрасываем последовательность при нажатии других клавиш
-            if (e.key !== '1' && e.key !== '0') {
-                keySequenceRef.current = '';
-                if (keyTimeoutRef.current) {
-                    clearTimeout(keyTimeoutRef.current);
-                    keyTimeoutRef.current = null;
-                }
-                return;
-            }
-
-            keySequenceRef.current += e.key;
-
-            if (keyTimeoutRef.current) {
-                clearTimeout(keyTimeoutRef.current);
-            }
-
-            // Устанавливаем таймаут для сброса последовательности
-            keyTimeoutRef.current = setTimeout(() => {
-                keySequenceRef.current = '';
-            }, 1000); // 1 секунда на ввод последовательности
-
-            if (keySequenceRef.current === '100110') {
-                // Предотвращаем попадание символов последовательности в поля ввода
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Фокусируемся на соответствующем поле ввода в зависимости от активной вкладки
-                if (activeTab === 'scan' && inputRef.current) {
-                    inputRef.current.focus();
-                } else if (activeTab === 'product' && productInputRef.current) {
-                    productInputRef.current.focus();
-                }
-                
-                // Сбрасываем последовательность
-                keySequenceRef.current = '';
-                if (keyTimeoutRef.current) {
-                    clearTimeout(keyTimeoutRef.current);
-                    keyTimeoutRef.current = null;
-                }
-            }
-        };
-
-        document.addEventListener('keydown', handleGlobalKeyDown);
-        document.addEventListener('input', handleInput);
-
-        return () => {
-            document.removeEventListener('keydown', handleGlobalKeyDown);
-            document.removeEventListener('input', handleInput);
-            if (keyTimeoutRef.current) {
-                clearTimeout(keyTimeoutRef.current);
-            }
-        };
-    }, [activeTab, confirmOpen]);
 
     // Загрузка списка товаров
     useEffect(() => {
@@ -147,7 +98,7 @@ export default function CreateDuplicateWindow({
     );
 
     // Требуется для замены русских букв на английские, т.к сканер эмулирует ввод с клавиатуры
-    const layoutMap: Record<string, string> = {
+    const layoutMap = useMemo((): Record<string, string> => ({
         'й': 'q', 'ц': 'w', 'у': 'e', 'к': 'r', 'е': 't', 'н': 'y', 'г': 'u', 'ш': 'i', 'щ': 'o', 'з': 'p',
         'х': '[', 'ъ': ']', 'ф': 'a', 'ы': 's', 'в': 'd', 'а': 'f', 'п': 'g', 'р': 'h', 'о': 'j', 'л': 'k',
         'д': 'l', 'ж': ';', 'э': "'", 'я': 'z', 'ч': 'x', 'с': 'c', 'м': 'v', 'и': 'b', 'т': 'n', 'ь': 'm',
@@ -157,9 +108,9 @@ export default function CreateDuplicateWindow({
         'Х': '{', 'Ъ': '}', 'Ф': 'A', 'Ы': 'S', 'В': 'D', 'А': 'F', 'П': 'G', 'Р': 'H', 'О': 'J', 'Л': 'K',
         'Д': 'L', 'Ж': ':', 'Э': '"', 'Я': 'Z', 'Ч': 'X', 'С': 'C', 'М': 'V', 'И': 'B', 'Т': 'N', 'Ь': 'M',
         'Б': '<', 'Ю': '>'
-    }
+    }), []);
 
-	const directPrint = async (payload: any) => {
+	const directPrint = async (payload: PrintData) => {
         try {
             // Не передаем selectedTemplate, чтобы API автоматически определил его из настроек клиента
             const printPayload = {
@@ -210,7 +161,7 @@ export default function CreateDuplicateWindow({
 
     // Обработчик для перехвата входящих данных от сканера.
     // Автоматически фокусирует поле ввода и вставляет данные при получении строки, начинающейся с '10011'
-    const handleInput = (e: Event) => {
+    const handleInput = useCallback((e: Event) => {
         // Если открыто модальное окно, не обрабатываем события ввода
         if (confirmOpen) {
             return;
@@ -243,7 +194,7 @@ export default function CreateDuplicateWindow({
                 target.select();
             }
         }
-    };
+    }, [confirmOpen]);
 
     const handleEnterPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         // Если открыто модальное окно, не обрабатываем события Enter
@@ -341,7 +292,7 @@ export default function CreateDuplicateWindow({
                     scannedData: dataMatrix,
                     productName: selectedProduct.title || '',
                     productSize: selectedSize ? (selectedSize.wbSize || selectedSize.techSize) : '',
-                    nmId: selectedProduct.nmID,
+                    nmId: selectedProduct.nmID.toString(),
                     vendorCode: selectedProduct.vendorCode || '',
                     dataMatrixCount,
                     barcodeAmount: barcodeAmount
@@ -367,6 +318,67 @@ export default function CreateDuplicateWindow({
             window.dispatchEvent(new CustomEvent('scan-confirm', { detail: false }));
         }
     }
+
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            // Если открыто модальное окно, не обрабатываем глобальные события
+            if (confirmOpen) {
+                return;
+            }
+
+            // Сбрасываем последовательность при нажатии других клавиш
+            if (e.key !== '1' && e.key !== '0') {
+                keySequenceRef.current = '';
+                if (keyTimeoutRef.current) {
+                    clearTimeout(keyTimeoutRef.current);
+                    keyTimeoutRef.current = null;
+                }
+                return;
+            }
+
+            keySequenceRef.current += e.key;
+
+            if (keyTimeoutRef.current) {
+                clearTimeout(keyTimeoutRef.current);
+            }
+
+            // Устанавливаем таймаут для сброса последовательности
+            keyTimeoutRef.current = setTimeout(() => {
+                keySequenceRef.current = '';
+            }, 1000); // 1 секунда на ввод последовательности
+
+            if (keySequenceRef.current === '100110') {
+                // Предотвращаем попадание символов последовательности в поля ввода
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Фокусируемся на соответствующем поле ввода в зависимости от активной вкладки
+                if (activeTab === 'scan' && inputRef.current) {
+                    inputRef.current.focus();
+                } else if (activeTab === 'product' && productInputRef.current) {
+                    productInputRef.current.focus();
+                }
+
+                // Сбрасываем последовательность
+                keySequenceRef.current = '';
+                if (keyTimeoutRef.current) {
+                    clearTimeout(keyTimeoutRef.current);
+                    keyTimeoutRef.current = null;
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleGlobalKeyDown);
+        document.addEventListener('input', handleInput);
+
+        return () => {
+            document.removeEventListener('keydown', handleGlobalKeyDown);
+            document.removeEventListener('input', handleInput);
+            if (keyTimeoutRef.current) {
+                clearTimeout(keyTimeoutRef.current);
+            }
+        };
+    }, [activeTab, confirmOpen, handleInput]);
 
 	return (
 		<div>

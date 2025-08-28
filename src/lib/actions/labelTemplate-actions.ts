@@ -3,13 +3,13 @@
 import { 
     createLabelTemplate, 
     getLabelTemplateById, 
-    getLabelTemplatesByClient, 
+    getLabelTemplatesByUser, 
     updateLabelTemplate, 
     deleteLabelTemplate,
     createDefaultElements 
 } from '@/lib/mongo/labelTemplates'
 import { getDefaultLabelSize } from '@/lib/utils/labelSizeUtils'
-import { updateClient } from '@/lib/mongo/clients'
+import { getUserIdFromSession } from './utils'
 import type { 
     CreateLabelTemplateData, 
     UpdateLabelTemplateData
@@ -19,20 +19,21 @@ export interface ActionResult {
     success: boolean
     message?: string
     error?: string
-    data?: any
+    data?: unknown
 }
 
 /**
  * Создать новый шаблон этикетки
  */
 export async function createLabelTemplateAction(
-    clientId: string,
     name: string,
     description?: string
 ): Promise<ActionResult> {
     try {
+        const userId = await getUserIdFromSession()
+        
         const templateData: CreateLabelTemplateData = {
-            clientId,
+            userId,
             name,
             description,
             elements: createDefaultElements(),
@@ -83,21 +84,22 @@ export async function getLabelTemplateAction(templateId: string): Promise<Action
 }
 
 /**
- * Получить все шаблоны клиента
+ * Получить все шаблоны пользователя
  */
-export async function getClientLabelTemplatesAction(clientId: string): Promise<ActionResult> {
+export async function getUserLabelTemplatesAction(): Promise<ActionResult> {
     try {
-        const templates = await getLabelTemplatesByClient(clientId)
+        const userId = await getUserIdFromSession()
+        const templates = await getLabelTemplatesByUser(userId)
 
         return {
             success: true,
             data: templates
         }
     } catch (error) {
-        console.error('Ошибка при получении шаблонов клиента:', error)
+        console.error('Ошибка при получении шаблонов пользователя:', error)
         return {
             success: false,
-            error: 'Не удалось получить шаблоны клиента'
+            error: 'Не удалось получить шаблоны пользователя'
         }
     }
 }
@@ -156,57 +158,6 @@ export async function deleteLabelTemplateAction(templateId: string): Promise<Act
         return {
             success: false,
             error: 'Не удалось удалить шаблон этикетки'
-        }
-    }
-}
-
-/**
- * Установить пользовательский шаблон как активный для клиента
- */
-export async function setClientCustomTemplateAction(
-    clientId: string,
-    templateId: string
-): Promise<ActionResult> {
-    try {
-        // Проверяем, что шаблон существует и принадлежит клиенту
-        const template = await getLabelTemplateById(templateId)
-        
-        if (!template) {
-            return {
-                success: false,
-                error: 'Шаблон этикетки не найден'
-            }
-        }
-
-        if (template.clientId !== clientId) {
-            return {
-                success: false,
-                error: 'Шаблон не принадлежит данному клиенту'
-            }
-        }
-
-        // Обновляем клиента
-        const result = await updateClient(clientId, {
-            selectedPrintTemplate: 'custom',
-            customLabelTemplateId: templateId
-        })
-
-        if (!result) {
-            return {
-                success: false,
-                error: 'Не удалось обновить настройки клиента'
-            }
-        }
-
-        return {
-            success: true,
-            message: 'Пользовательский шаблон установлен как активный'
-        }
-    } catch (error) {
-        console.error('Ошибка при установке пользовательского шаблона:', error)
-        return {
-            success: false,
-            error: 'Не удалось установить пользовательский шаблон'
         }
     }
 }

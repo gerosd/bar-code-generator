@@ -1,4 +1,3 @@
-import { ServerClientSelector } from '@/components/shared/ServerClientSelector';
 import { auth } from '@/lib/auth';
 import { FaUserCircle } from 'react-icons/fa';
 import BurgerButton from './BurgerButton';
@@ -19,7 +18,6 @@ const ServerHeader = async () => {
                 </div>
 
                 <div className='flex items-center space-x-2 md:space-x-4'>
-                    <ServerClientSelector />
                     {session?.user && (
                         <Link href='/profile' className='text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white flex items-center'>
                             <span className='hidden sm:inline mr-2 text-sm'>

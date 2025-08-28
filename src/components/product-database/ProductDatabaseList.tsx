@@ -4,7 +4,7 @@ import { deleteAllProductsAction } from '@/lib/actions/admin-actions'
 import type { ProductDatabaseView } from '@/lib/types/product'
 import { Alert, Button, Spinner, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow } from 'flowbite-react'
 import { useRouter } from 'next/navigation' // Для router.refresh()
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { HiInformationCircle } from 'react-icons/hi'
 
 interface ProductDatabaseListProps {

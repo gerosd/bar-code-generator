@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import type { LabelElement, LabelElementType } from '@/lib/types/labelEditor'
 
 interface DraggableElementProps {
@@ -49,7 +49,7 @@ export default function DraggableElement({
         }
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging) return
 
         const canvas = elementRef.current?.parentElement
@@ -73,7 +73,7 @@ export default function DraggableElement({
         const clampedY = Math.max(0, Math.min(newY, maxY))
 
         onPositionChangeAction(element.id, { x: clampedX, y: clampedY })
-    }
+    }, [isDragging, dragStart, canvasScale, onPositionChangeAction, element.id]);
 
     const handleMouseUp = () => {
         setIsDragging(false)
@@ -89,7 +89,7 @@ export default function DraggableElement({
                 document.removeEventListener('mouseup', handleMouseUp)
             }
         }
-    }, [isDragging, dragStart, canvasScale])
+    }, [isDragging, dragStart, canvasScale, handleMouseMove])
 
     const elementStyle: React.CSSProperties = {
         position: 'absolute',

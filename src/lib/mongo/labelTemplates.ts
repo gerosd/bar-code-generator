@@ -33,7 +33,7 @@ export async function createLabelTemplate(data: CreateLabelTemplateData): Promis
     
     return {
         id: result.insertedId.toString(),
-        clientId: templateDoc.clientId,
+        userId: templateDoc.userId,
         name: templateDoc.name,
         description: templateDoc.description,
         elements: templateDoc.elements,
@@ -55,7 +55,7 @@ export async function getLabelTemplateById(templateId: string): Promise<LabelTem
     
     return {
         id: doc._id.toString(),
-        clientId: doc.clientId,
+        userId: doc.userId,
         name: doc.name,
         description: doc.description,
         elements: doc.elements,
@@ -66,19 +66,19 @@ export async function getLabelTemplateById(templateId: string): Promise<LabelTem
 }
 
 /**
- * Получить все шаблоны клиента
+ * Получить все шаблоны пользователя
  */
-export async function getLabelTemplatesByClient(clientId: string): Promise<LabelTemplate[]> {
+export async function getLabelTemplatesByUser(userId: string): Promise<LabelTemplate[]> {
     const collection = await getLabelTemplatesCollection()
     
     const docs = await collection
-        .find({ clientId })
+        .find({ userId })
         .sort({ updatedAt: -1 })
         .toArray()
     
     return docs.map(doc => ({
         id: doc._id.toString(),
-        clientId: doc.clientId,
+        userId: doc.userId,
         name: doc.name,
         description: doc.description,
         elements: doc.elements,
@@ -112,7 +112,7 @@ export async function updateLabelTemplate(
     
     return {
         id: result._id.toString(),
-        clientId: result.clientId,
+        userId: result.userId,
         name: result.name,
         description: result.description,
         elements: result.elements,

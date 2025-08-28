@@ -23,16 +23,16 @@ export const getSuppliersCollection = async (): Promise<Collection<Supplier>> =>
 		// await suppliersCollection.createIndex({ userId: 1 }, { name: 'idx_userId' })
 		// await suppliersCollection.createIndex({ userId: 1, name: 1 }, { unique: true, name: 'uidx_userId_name' })
 
-		// Убедимся, что индексы по clientId существуют и создаются корректно
-		const indexExists = await suppliersCollection.indexExists('idx_clientId')
+		// Убедимся, что индексы по userId существуют и создаются корректно
+		const indexExists = await suppliersCollection.indexExists('idx_userId')
 		if (!indexExists) {
-			await suppliersCollection.createIndex({ clientId: 1 }, { name: 'idx_clientId' })
+			await suppliersCollection.createIndex({ userId: 1 }, { name: 'idx_userId' })
 		}
-		const uniqueIndexExists = await suppliersCollection.indexExists('uidx_clientId_name')
+		const uniqueIndexExists = await suppliersCollection.indexExists('uidx_userId_name')
 		if (!uniqueIndexExists) {
 			await suppliersCollection.createIndex(
-				{ clientId: 1, name: 1 },
-				{ unique: true, name: 'uidx_clientId_name' }
+				{ userId: 1, name: 1 },
+				{ unique: true, name: 'uidx_userId_name' }
 			)
 		}
 	}
@@ -68,7 +68,7 @@ export const getSupplierApiKey = async (supplierId: string): Promise<string | nu
  */
 export const updateSupplier = async (
 	id: string,
-	data: Partial<Omit<Supplier, '_id' | 'createdAt' | 'clientId'>>
+	data: Partial<Omit<Supplier, '_id' | 'createdAt' | 'userId'>>
 ): Promise<boolean> => {
 	return executeMongoOperation(async () => {
 		const collection = await getSuppliersCollection()
@@ -120,42 +120,42 @@ export const getSupplierTotalProducts = async (supplierId: string): Promise<numb
 }
 
 /**
- * Получение поставщиков клиента
+ * Получение поставщиков пользователя
  */
-export const getSuppliersByClientId = async (clientId: string): Promise<Supplier[]> => {
+export const getSuppliersByUserId = async (userId: string): Promise<Supplier[]> => {
 	return executeMongoOperation(async () => {
 		const collection = await getSuppliersCollection()
-		return collection.find({ clientId }).toArray()
-	}, `получении поставщиков для клиента: ${clientId}`)
+		return collection.find({ userId }).toArray()
+	}, `получении поставщиков для пользователя: ${userId}`)
 }
 
 /**
- * Подсчитывает количество поставщиков для указанного клиента.
- * @param clientId ID клиента.
+ * Подсчитывает количество поставщиков для указанного пользователя.
+ * @param userId ID пользователя.
  * @returns Promise<number> Количество поставщиков.
  */
-export const countSuppliersByClientId = async (clientId: string): Promise<number> => {
+export const countSuppliersByUserId = async (userId: string): Promise<number> => {
 	return executeMongoOperation(async () => {
 		const collection = await getSuppliersCollection()
-		return collection.countDocuments({ clientId })
-	}, `подсчете поставщиков для клиента: ${clientId}`)
+		return collection.countDocuments({ userId })
+	}, `подсчете поставщиков для пользователя: ${userId}`)
 }
 
 /**
- * Получение поставщика по ID и clientId (проверка доступа)
+ * Получение поставщика по ID и userId (проверка доступа)
  */
-export const getSupplierByIdAndClientId = async (supplierId: string, clientId: string): Promise<Supplier | null> => {
+export const getSupplierByIdAndUserId = async (supplierId: string, userId: string): Promise<Supplier | null> => {
 	return executeMongoOperation(async () => {
 		const collection = await getSuppliersCollection()
-		return collection.findOne({ _id: new ObjectId(supplierId), clientId })
-	}, `получении поставщика ${supplierId} для клиента ${clientId}`)
+		return collection.findOne({ _id: new ObjectId(supplierId), userId })
+	}, `получении поставщика ${supplierId} для пользователя ${userId}`)
 }
 
 /**
- * Создание нового поставщика для клиента
+ * Создание нового поставщика для пользователя
  */
-export const createSupplierForClient = async (supplierData: Partial<SupplierType> & {
-	clientId: string
+export const createSupplierForUser = async (supplierData: Partial<SupplierType> & {
+	userId: string
 	name: string
 	key: string
 	isValid: boolean
@@ -178,51 +178,51 @@ export const createSupplierForClient = async (supplierData: Partial<SupplierType
 			throw new Error('Не удалось найти поставщика после вставки.')
 		}
 		return insertedDocument
-	}, 'создании нового поставщика для клиента')
+	}, 'создании нового поставщика для пользователя')
 }
 
 /**
  * Получает всех активных и валидных поставщиков из базы данных.
  * Используется воркером для получения списка поставщиков, чьи товары нужно кэшировать.
- * @returns Promise<Array<{ id: string, key: string, clientId?: string, legacySupplierId?: number }>> Массив активных поставщиков.
+ * @returns Promise<Array<{ id: string, key: string, userId?: string, legacySupplierId?: number }>> Массив активных поставщиков.
  */
 export const getAllActiveValidSuppliers = async (): Promise<
-	Array<{ id: string; key: string; clientId?: string; legacySupplierId?: number }>
+	Array<{ id: string; key: string; userId?: string; legacySupplierId?: number }>
 > => {
 	return executeMongoOperation(async () => {
 		const collection = await getSuppliersCollection()
 		const activeSuppliers = await collection
 			.find({ isValid: true })
-			.project<{ _id: ObjectId; key: string; clientId?: string; legacySupplierId?: number }>({
-				_id: 1,
-				key: 1,
-				clientId: 1,
+					.project<{ _id: ObjectId; key: string; userId?: string; legacySupplierId?: number }>({
+			_id: 1,
+			key: 1,
+			userId: 1,
 				legacySupplierId: 1, // Добавлено legacySupplierId
 			})
 			.toArray()
 
-		return activeSuppliers.map((supplier) => ({
-			id: supplier._id.toHexString(),
-			key: supplier.key,
-			clientId: supplier.clientId,
+			return activeSuppliers.map((supplier) => ({
+		id: supplier._id.toHexString(),
+		key: supplier.key,
+		userId: supplier.userId,
 			legacySupplierId: supplier.legacySupplierId, // Добавлено legacySupplierId
 		}))
 	}, 'получении всех активных валидных поставщиков')
 }
 
 /**
- * Находит поставщика по его legacyId и ID клиента.
+ * Находит поставщика по его legacyId и ID пользователя.
  * @param legacySupplierId - "Старый" ID поставщика (число).
- * @param clientId - ID клиента.
+ * @param userId - ID пользователя.
  * @returns {Promise<SupplierType | null>} Найденный поставщик или null.
  */
-export const getSupplierByLegacyIdAndClientId = async (
+export const getSupplierByLegacyIdAndUserId = async (
 	legacySupplierId: number,
-	clientId: string
+	userId: string
 ): Promise<SupplierType | null> => {
 	const collection = await getSuppliersCollection()
 	return executeMongoOperation(
-		() => collection.findOne({ legacySupplierId, clientId }),
-		`поиске поставщика по legacyId ${legacySupplierId} и clientId ${clientId}`
+		() => collection.findOne({ legacySupplierId, userId }),
+		`поиске поставщика по legacyId ${legacySupplierId} и userId ${userId}`
 	)
 }

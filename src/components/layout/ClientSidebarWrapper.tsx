@@ -1,15 +1,10 @@
 'use client'
 
 import { Drawer } from 'flowbite-react'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Sidebar from './Sidebar'
 
-interface ClientSidebarWrapperProps {
-    isAdmin: boolean
-    isClientAdmin: boolean
-}
-
-const ClientSidebarWrapper: React.FC<ClientSidebarWrapperProps> = ({ isAdmin, isClientAdmin }) => {
+const ClientSidebarWrapper: React.FC = () => {
     const [open, setOpen] = useState(false)
     const [isMobileView, setIsMobileView] = useState(false)
 
@@ -38,8 +33,6 @@ const ClientSidebarWrapper: React.FC<ClientSidebarWrapperProps> = ({ isAdmin, is
         return (
             <Drawer open={open} onClose={handleClose} position='left' className='w-64'>
                 <Sidebar
-                    isAdmin={isAdmin}
-                    isClientAdmin={isClientAdmin}
                     isInsideDrawer={true}
                     closeDrawer={handleClose}
                 />
@@ -49,7 +42,7 @@ const ClientSidebarWrapper: React.FC<ClientSidebarWrapperProps> = ({ isAdmin, is
 
     return (
         <div className='hidden md:block'>
-            <Sidebar isAdmin={isAdmin} isClientAdmin={isClientAdmin} />
+            <Sidebar />
         </div>
     )
 }

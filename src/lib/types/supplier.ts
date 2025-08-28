@@ -2,8 +2,7 @@
 
 export interface SupplierType {
 	id?: string
-	// userId: string // TODO: будет удалено после миграции -- УДАЛЕНО
-	clientId: string // Новое поле - ID клиента, теперь обязательное
+	userId: string // ID пользователя, которому принадлежит поставщик
 	name: string
 	key: string
 	isValid: boolean
