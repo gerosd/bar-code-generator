@@ -41,3 +41,9 @@ yarn-error.log*
 
 # Bun
 bun.lockb
+.bun
+
+# Development
+*.log
+.DS_Store
+Thumbs.db

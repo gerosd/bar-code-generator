@@ -14,6 +14,11 @@ export interface UpdateUserProfileResult {
     error?: string
 }
 
+export interface UpdateUserPasswordInput {
+    currentPassword?: string
+    newPassword: string
+}
+
 const splitFullName = (fullName?: string): { firstName?: string; lastName?: string } => {
     if (!fullName) return {}
     const normalized = fullName.trim().replace(/\s+/g, ' ')
@@ -71,9 +76,38 @@ export const updateUserProfileAction = async (
     }
 }
 
-export interface UpdateUserPasswordInput {
-    currentPassword?: string
-    newPassword: string
+export interface UpdateUserPrinterSettingsInput {
+    printerIP?: string;
+    printerPort?: number;
+    printerName?: string;
+}
+
+export const updateUserPrinterSettingsAction = async (
+    input: UpdateUserPrinterSettingsInput
+): Promise<UpdateUserProfileResult> => {
+    try {
+        const userId = await getUserIdFromSession()
+        const existing = await getUserById(userId)
+        if (!existing) {
+            return {success: false, error: 'Пользователь не найден'}
+        }
+
+        const updated = await upsertUser({
+            _id: userId, 
+            printerSettings: {
+                printerIP: input.printerIP ?? existing.printerSettings?.printerIP ?? '',
+                printerPort: input.printerPort ?? existing.printerSettings?.printerPort ?? 9100,
+                printerName: input.printerName ?? existing.printerSettings?.printerName ?? 'Printer'
+            }
+        })
+        if (!updated) {
+            return {success: false, error: 'Не удалось обновить настройки принтера'}
+        }
+        return {success: true}
+    }
+    catch (error) {
+        return {success: false, error: 'Внутренняя ошибка при обновлении настроек принтера'}
+    }
 }
 
 export const updateUserPasswordAction = async (

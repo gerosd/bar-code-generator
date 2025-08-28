@@ -10,10 +10,10 @@ services:
       - ..:/workspace:cached
       - node_modules:/workspace/node_modules
     ports:
-      - "3000:3000"
+      - "3000:80"
     environment:
       - NODE_ENV=development
-    command:  sleep infinity
+    command: sleep infinity
     networks:
       - barcode-network
     container_name: bar-code-gen

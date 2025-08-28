@@ -7,9 +7,9 @@ import net from 'net';
 import {PrintData} from "@/lib/types/generation";
 import type { LabelElement } from "@/lib/types/labelEditor";
 import { generateZPLBarcode, getLabelDimensions, generateZPLWithLabelSize } from '@/lib/utils/barcodeExtract';
+import { getUserById } from '@/lib/mongo/users';
+import { getUserIdFromSession } from '@/lib/actions/utils';
 
-const PRINTER_IP = '10.222.10.86';
-const PRINTER_PORT = 9100;
 
 // Функция для генерации ZPL кода из пользовательского шаблона
 function generateZPLFromCustomTemplate(elements: LabelElement[], data: any): string {
@@ -113,7 +113,15 @@ export async function POST(request: NextRequest) {
         const body: PrintData = await request.json();
         let {scannedData, selectedTemplate} = body;
         const {productName, productSize, nmId, vendorCode, dataMatrixCount, barcodeAmount, diffEAN13} = body;
-
+        const userId = await getUserIdFromSession();
+        const user = await getUserById(userId);
+        const printerSettings = user?.printerSettings;
+        if (!printerSettings) {
+            return NextResponse.json(
+                {success: false, error: 'Настройки принтера не найдены. Пожалуйста, обновите настройки профиля.'},
+                {status: 400}
+            );
+        }
         if (!scannedData) {
             return NextResponse.json(
                 {success: false, error: 'Отсутствуют данные для генерации'},
@@ -268,7 +276,7 @@ export async function POST(request: NextRequest) {
                 client.destroy();
                 reject(err);
             });
-            client.connect(PRINTER_PORT, PRINTER_IP, () => {
+            client.connect(printerSettings.printerPort, printerSettings.printerIP, () => {
                 client.write(zplPayload, 'utf8', (err) => {
                     if (err) {
                         client.destroy();

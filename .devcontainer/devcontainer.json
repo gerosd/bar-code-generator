@@ -5,10 +5,16 @@
   "workspaceFolder": "/workspace",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "none"
+      "version": "lts"
     }
   },
   "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js App",
+      "protocol": "http"
+    }
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -26,6 +32,6 @@
       }
     }
   },
-  "postCreateCommand": "bun install && bun run postinstall",
-  "remoteUser": "root"
+  "postCreateCommand": "sudo chown -R node:node /workspace && bun install && bun run postinstall",
+  "remoteUser": "node"
 }

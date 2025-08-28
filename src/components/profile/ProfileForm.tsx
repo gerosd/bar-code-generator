@@ -1,17 +1,19 @@
 'use client'
 
-import {useState, useTransition} from 'react'
-import {updateUserProfileAction} from '@/lib/actions/user-actions'
+import React, {useState, useTransition} from 'react'
+import {updateUserPrinterSettingsAction, updateUserProfileAction} from '@/lib/actions/user-actions'
 import {useSession} from 'next-auth/react'
+import { PrinterSettings } from '@/lib/types/user'
 
 interface ProfileFormProps {
     initialFullName: string
     initialEmail: string
     canChangePassword: boolean
     hasExistingPassword: boolean
+    initialPrinterSettings: PrinterSettings
 }
 
-const ProfileForm: React.FC<ProfileFormProps> = ({initialFullName, initialEmail, canChangePassword, hasExistingPassword}: ProfileFormProps) => {
+const ProfileForm: React.FC<ProfileFormProps> = ({initialFullName, initialEmail, canChangePassword, hasExistingPassword, initialPrinterSettings}: ProfileFormProps) => {
     const {update} = useSession()
     const [fullName, setFullName] = useState(initialFullName)
     const [email, setEmail] = useState(initialEmail)
@@ -24,6 +26,10 @@ const ProfileForm: React.FC<ProfileFormProps> = ({initialFullName, initialEmail,
     const [confirmPassword, setConfirmPassword] = useState('')
     const [pwdStatus, setPwdStatus] = useState<'idle' | 'success' | 'error'>('idle')
     const [pwdError, setPwdError] = useState<string | null>(null)
+    const [printerSettings, setPrinterSettings] = useState<PrinterSettings>(initialPrinterSettings);
+    const [printerSettingsStatus, setPrinterSettingsStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [printerSettingsError, setPrinterSettingsError] = useState<string | null>(null);
+    const [isPendingPrinterSettings, startTransitionPrinterSettings] = useTransition();
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -42,6 +48,26 @@ const ProfileForm: React.FC<ProfileFormProps> = ({initialFullName, initialEmail,
             } else {
                 setError(result.error || 'Не удалось сохранить изменения')
                 setStatus('error')
+            }
+        })
+    }
+
+    const handlePrinterSettingsChange = (e: React.FormEvent) => {
+        e.preventDefault()
+        setPrinterSettingsStatus('idle')
+        setPrinterSettingsError(null)
+
+        startTransitionPrinterSettings(async () => {
+            const result = await updateUserPrinterSettingsAction({
+                printerIP: printerSettings.printerIP,
+                printerPort: printerSettings.printerPort,
+                printerName: printerSettings.printerName
+            })
+            if (result.success) {
+                setPrinterSettingsStatus('success')
+            } else {
+                setPrinterSettingsError(result.error || 'Не удалось сохранить изменения')
+                setPrinterSettingsStatus('error')
             }
         })
     }
@@ -181,7 +207,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({initialFullName, initialEmail,
                             <button
                                 type='button'
                                 disabled={isPendingPwd}
-                                onClick={() => handlePasswordChange}
+                                onClick={handlePasswordChange}
                                 className='inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer'
                             >
                                 {isPendingPwd ? 'Обновление...' : 'Обновить пароль'}
@@ -190,6 +216,68 @@ const ProfileForm: React.FC<ProfileFormProps> = ({initialFullName, initialEmail,
                     </div>
                 </div>
             )}
+
+            <div className='pt-6 border-t border-gray-200 dark:border-gray-700'>
+                <h3 className='text-md font-medium text-gray-900 dark:text-gray-100 mb-4'>Настройки принтера</h3>
+                <div className='space-y-5'>
+                    <div>
+                        <label htmlFor='printerIP' className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
+                            IP-адрес принтера
+                        </label>
+                        <input
+                            className='mt-1 py-2 px-3 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500'
+                            id='printerIP'
+                            type='text'
+                            value={printerSettings.printerIP}
+                            onChange={(e) => setPrinterSettings({...printerSettings, printerIP: e.target.value})}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor='printerPort' className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
+                            Порт принтера
+                        </label>
+                        <input
+                            className='mt-1 py-2 px-3 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500'
+                            id='printerPort'
+                            type='number'
+                            value={printerSettings.printerPort}
+                            onChange={(e) => setPrinterSettings({...printerSettings, printerPort: parseInt(e.target.value)})}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor='printerName' className='block text-sm font-medium text-gray-700 dark:text-gray-300'>
+                            Название принтера
+                        </label>
+                        <input
+                            className='mt-1 py-2 px-3 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500'
+                            id='printerName'
+                            type='text'
+                            value={printerSettings.printerName}
+                            onChange={(e) => setPrinterSettings({...printerSettings, printerName: e.target.value})}
+                        />
+                    </div>
+                    <div>
+                        <button
+                            type='button'
+                            disabled={isPendingPrinterSettings}
+                            onClick={handlePrinterSettingsChange}
+                            className='inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer'
+                        >
+                            {isPendingPrinterSettings ? 'Обновление...' : 'Обновить настройки'}
+                        </button>
+                    </div>
+                    {printerSettingsStatus === 'success' && (
+                        <div className='rounded-md bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/30 dark:text-green-300'>
+                            Настройки принтера обновлены
+                        </div>
+                    )}
+                    {printerSettingsStatus === 'error' && printerSettingsError && (
+                        <div className='rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300'>
+                            {printerSettingsError}
+                        </div>
+                    )}
+                </div>
+            </div>
         </form>
     )
 }

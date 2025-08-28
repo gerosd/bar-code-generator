@@ -12,6 +12,11 @@ const ProfilePage = async () => {
     const initialEmail = dbUser?.email || ''
     const canChangePassword = !!dbUser && dbUser.email && dbUser._id === dbUser.email
     const hasExistingPassword = !!dbUser?.password
+    const initialPrinterSettings = dbUser?.printerSettings || {
+        printerIP: '',
+        printerPort: 9100,
+        printerName: 'Printer'
+    }
 
     return (
         <div className='container mx-auto p-4'>
@@ -19,7 +24,13 @@ const ProfilePage = async () => {
             <div className='max-w-2xl mx-auto'>
                 <div
                     className='rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm'>
-                    <ProfileForm initialFullName={initialFullName} initialEmail={initialEmail} canChangePassword={!!canChangePassword} hasExistingPassword={hasExistingPassword}/>
+                    <ProfileForm 
+                        initialFullName={initialFullName} 
+                        initialEmail={initialEmail} 
+                        canChangePassword={!!canChangePassword} 
+                        hasExistingPassword={hasExistingPassword}
+                        initialPrinterSettings={initialPrinterSettings}
+                    />
                 </div>
             </div>
         </div>

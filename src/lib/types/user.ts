@@ -3,10 +3,14 @@
 // Определяем доступные роли
 export enum UserRole {
     USER = 'user',
-    ADMIN = 'admin',
-    SUPPORT = 'support',
+    ADMIN = 'admin'
 }
 
+export interface PrinterSettings {
+    printerIP: string;
+    printerPort: number;
+    printerName?: string;
+}
 
 // Тип для методов аутентификации
 export interface AuthMethod {
@@ -27,9 +31,9 @@ export interface UserType {
     image?: string;
     roles: UserRole[];
     authMethods: AuthMethod[];
-    // Удалены настройки репрайсера
     availableClients?: string[]; // ID клиентов, в которых состоит пользователь
     currentClientId?: string; // ID текущего выбранного клиента
+    printerSettings?: PrinterSettings;
     createdAt: Date;
     updatedAt: Date;
 }
