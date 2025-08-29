@@ -9,12 +9,12 @@ let database: Db | null = null;
 /**
  * URL-адрес MongoDB
  */
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/barcode-generator';
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/user-barcode-generator';
 
 /**
  * Имя базы данных
  */
-const DB_NAME = process.env.MONGODB_DB || 'barcode-generator';
+const DB_NAME = process.env.MONGODB_DB || 'user-barcode-generator';
 
 const connectToDatabase = async (): Promise<{ client: MongoClient; db: Db }> => {
     if (!client) {

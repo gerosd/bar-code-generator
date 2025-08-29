@@ -101,7 +101,7 @@ export default function ScanHistory({ dataMatrixCount, barcodeAmount }: ScanHist
                                             const dataMatrix = it.code
                                             // Пытаемся получить данные по EAN-13 из матрицы, если возможно
                                             const barcodeCandidate = dataMatrix.slice(3, 16)
-                                            const isEAN13 = /^\d{13}$/.test(barcodeCandidate)
+                                            const isEAN13 = /^\d{13}$/.test(barcodeCandidate);
                                             let productName = ''
                                             let productSize = ''
                                             let nmId = ''
